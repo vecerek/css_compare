@@ -1,3 +1,5 @@
+require 'json'
+
 module CssCompare
   module CSS
     class Parser
@@ -8,7 +10,7 @@ module CssCompare
 
       # Parses a CSS project
       def parse
-        `node #{Util.scope(PARSER)} #{@input}`
+        json_ast = JSON.parse(`node #{Util.scope(PARSER)} #{@input}`)
       end
 
       private
