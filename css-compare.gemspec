@@ -25,13 +25,13 @@ CSSCOMPARE_GEMSPEC = Gem::Specification.new do |spec|
     raise 'RubyGems 2.0 or newer is required to protect against public gem pushes.'
   end
 
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.executables   = %w(css_compare)
   spec.files         = Dir['lib/**/*', 'bin/*']
   spec.test_files    = Dir['spec/lib/**/*_spec.rb', 'test/**/*_test.rb']
   spec.has_rdoc      = false
   spec.require_paths = ['lib']
 
-  spec.add_development_dependency 'bundler', '~> 1.11'
-  spec.add_development_dependency 'rake', '~> 10.0'
-  spec.add_development_dependency 'rspec', '~> 3.0'
+  #spec.add_development_dependency 'bundler', '~> 1.11'
+  #spec.add_development_dependency 'rake', '~> 10.0'
+  #spec.add_development_dependency 'rspec', '~> 3.0'
 end

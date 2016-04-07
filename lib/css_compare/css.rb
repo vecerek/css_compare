@@ -1,0 +1,1 @@
+require 'css_compare/css/parser'
