@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+# A command line CSS comparison tool
+
+begin
+  require_relative '../lib/css_compare'
+rescue
+  require 'css_compare'
+end
+
+opts = CssCompare::Comparison.new(ARGV)
+opts.parse!
