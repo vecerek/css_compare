@@ -36,6 +36,7 @@ module CssCompare
         @engine = {}
         @selectors = {}
         @keyframes = {}
+        @namespaces = {}
         @unsupported = []
         @charset = ''
       end
@@ -51,19 +52,30 @@ module CssCompare
           elsif node.is_a?(Sass::Tree::RuleNode)
             process_rule_node(node)
           elsif node.is_a?(Sass::Tree::DirectiveNode)
-            if node.name && node.name == '@keyframes'
-              process_keyframe_rule_nodes(node)
+            if node.name
+              case node.name
+                when '@keyframes'
+                  process_keyframe_rule_nodes(node)
+                when '@namespace'
+                  process_namespace_node(node)
+                else
+                  # Unsupported DirectiveNodes, that have a name property
+                  @unsupported << node
+              end
             else
+              # Unsupported DirectiveNodes, that do not have a name property
               @unsupported << node
             end
           elsif node.is_a?(Sass::Tree::CharsetNode)
             process_charset_node(node)
           else
+            # Unsupported Node
             @unsupported << node
           end
         end
         @engine[:selectors] = @selectors
         @engine[:keyframes] = @keyframes
+        @engine[:namespaces] = @namespaces
         @engine[:charset] = @charset
         self
       end
@@ -76,6 +88,7 @@ module CssCompare
         engine = {
             :selectors => [],
             :keyframes => [],
+            :namespaces => @namespaces,
             :charset => @charset
         }
         @selectors.each {|_,s| engine[:selectors] << s.to_json }
@@ -272,6 +285,20 @@ module CssCompare
       # Processes the charset directive, if present.
       def process_charset_node(node)
         @charset = node.name
+      end
+
+      # Unifies the namespace by replacing the ' or " characters with an
+      # empty space if the namespace name is given by a URL.
+      # The namespaces declaration without any specified prefix value are
+      # automatically assigned to the default namespace.
+      #
+      # @param [Sass::Tree::DirectiveNode] node the namespace node
+      # @return [Void]
+      def process_namespace_node(node)
+        values = node.value[1].strip.split(/\s+/)
+        values = values.unshift('default') if values.length == 1
+        values[1].gsub!(/("|')/, '') if values[1] =~ /^url\(("|').+("|')\)$/
+        @namespaces.update(values[0].to_sym => values[1])
       end
     end
   end
