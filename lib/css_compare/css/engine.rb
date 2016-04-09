@@ -25,11 +25,18 @@ module CssCompare
       # @return [Hash<Symbol, Array<Component::Selector, String>]
       attr_reader :engine
 
+      # A list of nodes, that could not be evaluated due to
+      # being not supported by this engine.
+      #
+      # @return [Array<Sass::Tree::Node>] unsupported CSS nodes
+      attr_reader :unsupported
+
       def initialize(input)
         @tree = Parser.new(input).parse
         @engine = {}
         @selectors = {}
         @keyframes = {}
+        @unsupported = []
         @charset = ''
       end
 
@@ -44,11 +51,15 @@ module CssCompare
           elsif node.is_a?(Sass::Tree::RuleNode)
             process_rule_node(node)
           elsif node.is_a?(Sass::Tree::DirectiveNode)
-            process_keyframe_rule_nodes(node) if node.name == '@keyframes'
+            if node.name && node.name == '@keyframes'
+              process_keyframe_rule_nodes(node)
+            else
+              @unsupported << node
+            end
           elsif node.is_a?(Sass::Tree::CharsetNode)
             process_charset_node(node)
           else
-            ;#puts "It's #{node.class.to_s}"
+            @unsupported << node
           end
         end
         @engine[:selectors] = @selectors
