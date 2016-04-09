@@ -1,3 +1,5 @@
 require 'css_compare/css/component/value'
 require 'css_compare/css/component/property'
 require 'css_compare/css/component/selector'
+require 'css_compare/css/component/keyframes_selector'
+require 'css_compare/css/component/keyframes'

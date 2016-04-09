@@ -43,8 +43,8 @@ module CssCompare
             process_media_node(node)
           elsif node.is_a?(Sass::Tree::RuleNode)
             process_rule_node(node)
-          elsif node.is_a?(Sass::Tree::KeyframeRuleNode)
-            process_keyframe_rule_node(node)
+          elsif node.is_a?(Sass::Tree::DirectiveNode)
+            process_keyframe_rule_nodes(node) if node.name == '@keyframes'
           elsif node.is_a?(Sass::Tree::CharsetNode)
             process_charset_node(node)
           else
@@ -83,20 +83,12 @@ module CssCompare
       def process_media_node(node)
         queries = node.resolved_query.queries.inject([]) {|queries, q| queries << q.to_css}
         rules = node.children
-        process_rule_node(rules.shift, queries)
-      end
-
-      # Saves the selector and its properties.
-      # If the selector already exists, it merges its properties
-      # with the existent selector's properties.
-      #
-      # @see {Component::Selector#merge}
-      # @return [Void]
-      def save_selector(selector)
-        if @selectors[selector.name]
-          @selectors[selector.name].merge(selector.properties)
-        else
-          @selectors[selector.name] = selector
+        rules.each do |child|
+          if child.is_a?(Sass::Tree::RuleNode)
+            process_rule_node(child, queries)
+          elsif child.is_a?(Sass::Tree::DirectiveNode)
+            process_keyframe_rule_nodes(child, queries) if child.name == '@keyframes'
+          end
         end
       end
 
@@ -122,6 +114,20 @@ module CssCompare
         save_selector(selector)
         selectors.each do |name|
           save_selector(selector.deep_copy(name))
+        end
+      end
+
+      # Saves the selector and its properties.
+      # If the selector already exists, it merges its properties
+      # with the existent selector's properties.
+      #
+      # @see {Component::Selector#merge}
+      # @return [Void]
+      def save_selector(selector)
+        if @selectors[selector.name]
+          @selectors[selector.name].merge(selector.properties)
+        else
+          @selectors[selector.name] = selector
         end
       end
 
@@ -175,10 +181,8 @@ module CssCompare
       # representing a selector sequence.
       # @return [String] optimized selector.
       def optimize_sequence(selector)
-        selector.members.inject([]) do |final, simple_sequence|
-          unless simple_sequence.is_a?(Sass::Selector::SimpleSequence)
-            final << simple_sequence.to_s
-          else
+        selector.members.inject([]) do |final, sequence|
+          if sequence.is_a?(Sass::Selector::SimpleSequence)
             baskets = {
                 Sass::Selector::Universal => [],
                 Sass::Selector::Element => [],
@@ -187,23 +191,71 @@ module CssCompare
                 Sass::Selector::Placeholder => [],
                 Sass::Selector::Pseudo => []
             }
-            simple_sequence.members.each_with_index do |simple, i|
-              last = i + 1 == simple_sequence.members.length
-              if !last && simple_sequence.members[i + 1].is_a?(Sass::Selector::Attribute)
-                baskets[simple.class] << simple.to_s + simple_sequence.members[i + 1].to_s
-                simple_sequence.members.delete_at(i + 1)
+            sequence.members.each_with_index do |simple, i|
+              last = i + 1 == sequence.members.length
+              if !last && sequence.members[i + 1].is_a?(Sass::Selector::Attribute)
+                baskets[simple.class] << simple.to_s + sequence.members[i + 1].to_s
+                sequence.members.delete_at(i + 1)
               else
                 baskets[simple.class] << simple.to_s
               end
             end
             final << baskets.values.inject([]) {|partial, b| partial + b.uniq.sort}.join('')
+          else
+            final << sequence.to_s
           end
         end.join(' ')
       end
 
       # Processes and evaluates the {Sass::Tree::KeyframeRuleNode}.
-      def process_keyframe_rule_node(node)
-        puts 'Processing keyframe rule node'
+      #
+      # An @keyframe directive can't be extended by later re-declarations.
+      # However, you can bend their behaviour by declaring keyframes
+      # under different @media queries. The browser then keeps track of
+      # different keyframes declarations under the same name. Like it would
+      # be namespaced. But still, the re-declarations do not extend the
+      # original @keyframe.
+      #
+      # Example:
+      #   @keyframes my-value {
+      #     from { top: 0px; }
+      #     to   { top: 100px; }
+      #   }
+      #   @media (max-width: 600px) {
+      #     @keyframes my-value {
+      #       50% { top: 50px; }
+      #     }
+      #   }
+      #
+      #   The keyframe under the media query WON'T be interpreted like this:
+      #   @media (max-width: 600px) {
+      #     @keyframes my-value {
+      #       from { top: 0px; }
+      #       50%  { top: 50px; }
+      #       to   { top: 100px; }
+      #     }
+      #   }
+      #
+      # @param [Sass::Tree::DirectiveNode] node the node containing
+      #   information about and the keyframe rules of the @keyframes
+      #   directive.
+      # @return [Void]
+      def process_keyframe_rule_nodes(node, conditions = ['all'])
+        keyframes = Component::Keyframes.new(node, conditions)
+        save_keyframes(keyframes)
+      end
+
+      # Saves the keyframes into the collection.
+      # If keyframes already exists, merges it with
+      # the existing value.
+      #
+      # @return [Void]
+      def save_keyframes(keyframes)
+        if @keyframes[keyframes.name]
+          @keyframes[keyframes.name].merge(keyframes)
+        else
+          @keyframes[keyframes.name] = keyframes
+        end
       end
 
       # Processes the charset directive, if present.
