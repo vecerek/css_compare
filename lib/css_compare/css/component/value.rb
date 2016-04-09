@@ -1,7 +1,7 @@
 module CssCompare
   module CSS
     module Component
-      # Represents a the value of a CSS property under
+      # Represents the value of a CSS property under
       # certain conditions declared by @media queries.
       class Value
         # @return [#to_s]
@@ -17,11 +17,11 @@ module CssCompare
         #
         # @private
         def value=(value)
-          original_value = value
+          original_value = value = value.is_a?(Value) ? value.value : value
           # Can't do gsub! because the String gets frozen and can't be further modified by strip
-          value = value.gsub('!important', '')
+          value = value.gsub(/\s*!important\s*/, '')
           @is_important = value != original_value
-          @value = value.strip
+          @value = value
         end
 
         # Tells, whether or not the value is marked as !important

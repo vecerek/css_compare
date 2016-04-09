@@ -43,9 +43,17 @@ module CssCompare
         def add_property(property)
           name = property.name
           if @properties[name]
-            @properties[name].merge(properties)
+            @properties[name].merge(property)
           else
             @properties[name] = property
+          end
+        end
+
+        def deep_copy(value = @value)
+          copy = dup
+          copy.value = value
+          copy.properties = @properties.inject({}) do |result,(k,v)|
+            result.update(k => v.deep_copy)
           end
         end
 
@@ -54,9 +62,9 @@ module CssCompare
         #
         # @return [Hash]
         def to_json
-          json = {}
-          @properties.each {|name, prop| json[name.to_sym] = prop.to_json }
-          json
+          @properties.inject({}) do |result, (name,prop)|
+            result.update(name.to_sym => prop.to_json)
+          end
         end
 
         # Creates and puts te properties into the set of

@@ -3,6 +3,8 @@ module CssCompare
     module Component
       # Represents one simple selector sequence, like
       # .a.b.c > div.f:first-child.
+      #
+      # @see https://www.w3.org/TR/css3-selectors/#selectors
       class Selector
         # @return [String] selector's name
         attr_accessor :name
@@ -26,24 +28,36 @@ module CssCompare
         # Combines the selector's properties with the
         # properties of another selector.
         #
+        # @param [Property, Array<Property>] other
+        #   the selector to be merged with
+        # @return [Void]
+        def merge(other)
+          other.properties.each do |_,prop|
+            add_property(prop)
+          end
+        end
+
+        # Adds a property to the existing set of properties
+        # of this selector.
+        #
         # If the property does not exist, it will be
         # added. Otherwise the values of the properties
         # will be merged.
         #
         # @see {Property#merge}
-        # @param [Property, Array<Property>] properties
-        #   one or more properties to be added to the
-        #   selector's set of properties.
+        # @param [Property] prop the property to add
+        # @param [Boolean] deep_copy tells, whether a
+        #   deep copy should be applied onto the property.
         # @return [Void]
-        def merge(properties)
-          if properties.is_a?(Hash)
-            properties.each {|_,p| merge(p) }
+        def add_property(prop, deep_copy = true)
+          name = prop.name
+          if @properties[name]
+            @properties[name].merge(prop)
           else
-            name = properties.name
-            if @properties[name]
-              @properties[name].merge(properties)
+            if deep_copy
+              @properties[name] = prop.deep_copy
             else
-              @properties[name] = properties.deep_copy
+              @properties[name] = prop
             end
           end
         end
@@ -66,11 +80,10 @@ module CssCompare
         # @return [Hash]
         def to_json
           key = @name.to_sym
-          json = {
-              key => {}
-          }
-          @properties.each {|k,v| json[key][k] = v.to_json }
-          json
+          json = { key => {} }
+          @properties.inject(json[key]) do |result, (k,v)|
+            result.update(k => v.to_json)
+          end
         end
 
         private
@@ -84,7 +97,7 @@ module CssCompare
         # @return [Void]
         def process_properties(properties, conditions)
           properties.each do |property|
-            merge(Property.new(property, conditions)) if property.is_a?(Sass::Tree::PropNode)
+            add_property(Property.new(property, conditions)) if property.is_a?(Sass::Tree::PropNode)
           end
         end
       end

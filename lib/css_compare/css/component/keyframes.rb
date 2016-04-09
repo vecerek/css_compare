@@ -2,6 +2,8 @@ module CssCompare
   module CSS
     module Component
       # Represents an @keyframes declaration
+      #
+      # @see https://www.w3.org/TR/css3-animations/#keyframes
       class Keyframes
         # The name of the keyframes.
         #
@@ -48,19 +50,25 @@ module CssCompare
           end
         end
 
+        def deep_copy(name = @name)
+          copy = dup
+          copy.name = name
+          copy.rules = @rules.inject({}) do |result,(k,v)|
+            result.update(k => v.deep_copy)
+          end
+        end
+
         # Creates the JSON representation of this keyframes.
         #
         # @return [Hash]
         def to_json
           json = { :name => @name.to_sym, :rules => {} }
-          @rules.each do |cond, rules|
-            cond = cond.to_sym
-            json[:rules][cond] = {}
-            rules.each do |value, rule|
-              json[:rules][cond][value.to_sym] = rule.to_json
+          @rules.inject(json[:rules]) do |frames, (cond,rules)|
+            frames[cond] = {}
+            rules.inject(frames[cond]) do |result, (value,rule)|
+              result.update(value.to_sym => rule.to_json)
             end
           end
-          json
         end
 
         # Assigns the processed rules to the passed conditions

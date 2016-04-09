@@ -63,12 +63,12 @@ module CssCompare
           val_to_replace = value(condition)
           # Check, whether the condition exists
           if val_to_replace
-            @values[condition].value = val.clone if val.important? || !val_to_replace.important?
+            @values[condition].value = val if val.important? || !val_to_replace.important?
           else
             if global_value && global_value.important?
               @values[condition] = val.important? ? val : global_value.clone
             else
-              @values[condition] = val.clone
+              @values[condition] = val
             end
           end
         end
@@ -113,9 +113,7 @@ module CssCompare
         #
         # @return [Hash]
         def to_json
-          json = {}
-          @values.each {|k,v| json[k] = v.to_s }
-          json
+          @values.inject({}) {|result, (k,v)| result.update(k => v.to_s)}
         end
 
         private

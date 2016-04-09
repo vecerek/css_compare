@@ -23,22 +23,28 @@ module CssCompare
       # the declared @media directives.
       #
       # @return [Hash<Symbol, Array<Component::Selector, String>]
-      attr_reader :engine
+      attr_accessor :engine
 
       # A list of nodes, that could not be evaluated due to
       # being not supported by this engine.
       #
       # @return [Array<Sass::Tree::Node>] unsupported CSS nodes
-      attr_reader :unsupported
+      attr_accessor :unsupported
+
+      attr_accessor :selectors, :keyframes, :namespaces,
+                  :pages, :supports, :charset
 
       def initialize(input)
-        @tree = Parser.new(input).parse
+        @tree = Parser.new(input).parse.freeze if input.is_a?(String)
+        @tree = input.freeze if input.is_a?(Sass::Tree::Node)
         @engine = {}
         @selectors = {}
         @keyframes = {}
         @namespaces = {}
+        @pages = {}
+        @supports = {}
         @unsupported = []
-        @charset = ''
+        @charset
       end
 
       # Computes the values of each declared selector's properties
@@ -52,12 +58,17 @@ module CssCompare
           elsif node.is_a?(Sass::Tree::RuleNode)
             process_rule_node(node)
           elsif node.is_a?(Sass::Tree::DirectiveNode)
-            if node.name
+            if node.is_a?(Sass::Tree::SupportsNode)
+              process_supports_node(node)
+            elsif node.name
               case node.name
                 when '@keyframes'
-                  process_keyframe_rule_nodes(node)
+                  process_keyframes_node(node)
                 when '@namespace'
                   process_namespace_node(node)
+                when '@page'
+                  #puts node.to_yaml
+                  #process_page_node(node)
                 else
                   # Unsupported DirectiveNodes, that have a name property
                   @unsupported << node
@@ -76,6 +87,8 @@ module CssCompare
         @engine[:selectors] = @selectors
         @engine[:keyframes] = @keyframes
         @engine[:namespaces] = @namespaces
+        @engine[:pages] = @pages
+        @engine[:supports] = @supports
         @engine[:charset] = @charset
         self
       end
@@ -89,10 +102,14 @@ module CssCompare
             :selectors => [],
             :keyframes => [],
             :namespaces => @namespaces,
+            :pages => [],
+            :supports => [],
             :charset => @charset
         }
-        @selectors.each {|_,s| engine[:selectors] << s.to_json }
-        @keyframes.each {|_,k| engine[:keyframes] << k.to_json }
+        @selectors.inject(engine[:selectors]) {|arr, (_,s)| arr << s.to_json }
+        @keyframes.inject(engine[:keyframes]) {|arr, (_,k)| arr << k.to_json }
+        @pages.inject(engine[:pages]) {|arr, (_,p)| arr << p.to_json }
+        @supports.inject(engine[:supports]) {|arr, (_,s)| arr << s.to_json}
         engine
       end
 
@@ -111,7 +128,7 @@ module CssCompare
           if child.is_a?(Sass::Tree::RuleNode)
             process_rule_node(child, queries)
           elsif child.is_a?(Sass::Tree::DirectiveNode)
-            process_keyframe_rule_nodes(child, queries) if child.name == '@keyframes'
+            process_keyframes_node(child, queries) if child.name == '@keyframes'
           end
         end
       end
@@ -149,7 +166,7 @@ module CssCompare
       # @return [Void]
       def save_selector(selector)
         if @selectors[selector.name]
-          @selectors[selector.name].merge(selector.properties)
+          @selectors[selector.name].merge(selector)
         else
           @selectors[selector.name] = selector
         end
@@ -264,7 +281,7 @@ module CssCompare
       #   information about and the keyframe rules of the @keyframes
       #   directive.
       # @return [Void]
-      def process_keyframe_rule_nodes(node, conditions = ['all'])
+      def process_keyframes_node(node, conditions = ['all'])
         keyframes = Component::Keyframes.new(node, conditions)
         save_keyframes(keyframes)
       end
@@ -292,6 +309,11 @@ module CssCompare
       # The namespaces declaration without any specified prefix value are
       # automatically assigned to the default namespace.
       #
+      # "If a namespace prefix or default namespace is declared more than
+      # once only the last declaration shall be used. Declaring a namespace
+      # prefix or default namespace more than once is nonconforming."
+      # @see https://www.w3.org/TR/css3-namespace/#prefixes
+      #
       # @param [Sass::Tree::DirectiveNode] node the namespace node
       # @return [Void]
       def process_namespace_node(node)
@@ -299,6 +321,62 @@ module CssCompare
         values = values.unshift('default') if values.length == 1
         values[1].gsub!(/("|')/, '') if values[1] =~ /^url\(("|').+("|')\)$/
         @namespaces.update(values[0].to_sym => values[1])
+      end
+
+      def process_page_node(node, conditions = ['all'])
+        selectors = node.value[1].strip.split(/,\s+/)
+        page_selector = Component::PageSelector.new(selectors.shift, node.children, conditions)
+        save_page_selector(page_selector)
+        selectors.each do |selector|
+          save_page_selector(page_selector.deep_copy(selector))
+        end
+      end
+
+      def save_page_selector(page_selector)
+
+      end
+
+      # Processes and saves a {SupportsNode}.
+      #
+      # @see {Component::Supports}
+      # @param [Sass::Tree::SupportsNode] node
+      # @return [Void]
+      def process_supports_node(node)
+        supports = Component::Supports.new(node)
+        save_supports(supports)
+      end
+
+      def save_supports(supports)
+        if @supports[supports.name]
+          @supports[supports.name].merge(supports)
+        else
+          @supports[supports.name] = supports
+        end
+      end
+
+      # Creates a deep copy of this object.
+      #
+      # @return [Engine]
+      def deep_copy
+        copy = dup
+        copy.selectors = @selectors.inject({}) do |result,(k,v)|
+          result.update(k => v.deep_copy)
+        end
+        copy.keyframes = @keyframes.inject({}) do |result,(k,v)|
+          result.update(k => v.deep_copy)
+        end
+        #copy.pages = {}
+        copy.supports = @supports.inject({}) do |result,(k,v)|
+          result.update(k => v.deep_copy)
+        end
+        copy.engine = {
+            :selectors => copy.selectors,
+            :keyframes => copy.keyframes,
+            :namespaces => copy.namespaces,
+            :pages => copy.pages,
+            :supports => copy.supports
+        }
+        copy
       end
     end
   end
