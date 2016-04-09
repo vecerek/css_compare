@@ -82,8 +82,11 @@ module CssCompare
         # @return [Hash{String => KeyframeSelector}]
         def process_rules(rule_nodes)
           rule_nodes.inject({}) do |rules, node|
-            rule = Component::KeyframesSelector.new(node)
-            rules.update(rule.value => rule)
+            if node.is_a?(Sass::Tree::KeyframeRuleNode)
+              rule = Component::KeyframesSelector.new(node)
+              rules.update(rule.value => rule)
+            end
+            rules
           end
         end
       end

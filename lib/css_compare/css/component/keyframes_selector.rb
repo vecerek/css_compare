@@ -64,7 +64,9 @@ module CssCompare
         #
         # @return [Void]
         def process_properties(properties)
-          properties.each { |prop| add_property(Property.new(prop, ['no condition'])) }
+          properties.each do |prop|
+            add_property(Property.new(prop, ['no condition'])) if prop.is_a?(Sass::Tree::PropNode)
+          end
         end
       end
     end

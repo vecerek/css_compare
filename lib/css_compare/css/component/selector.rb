@@ -78,10 +78,13 @@ module CssCompare
         # Walks through the property nodes ands merges them
         # to the selector's set of properties.
         #
+        # @param [Array<Sass::Tree::Node>] properties potential property
+        #   nodes of the selector.
+        # @param [Array<String>] conditions @media query conditions
         # @return [Void]
         def process_properties(properties, conditions)
           properties.each do |property|
-            merge(Property.new(property, conditions))
+            merge(Property.new(property, conditions)) if property.is_a?(Sass::Tree::PropNode)
           end
         end
       end
