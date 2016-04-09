@@ -43,7 +43,7 @@ module CssCompare
             if @properties[name]
               @properties[name].merge(properties)
             else
-              @properties[name] = properties
+              @properties[name] = properties.deep_copy
             end
           end
         end
