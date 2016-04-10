@@ -12,7 +12,9 @@ module CssCompare
     #   - simple property overriding
     #   - property overriding with !import
     #   - @import rules
-    #   - @media queries
+    #   - @media queries - PARTIAL SUPPORT ONLY!!!
+    #   - nested @media queries also know as nested conditional
+    #     group rules
     #   - @keyframes rules
     #   - @namespace rules
     #   - @charset rules
@@ -24,6 +26,11 @@ module CssCompare
     # are not interpreted and evaluated by the engine. Instead,
     # they are stringified as a whole and used as the key
     # for their selector-property pairs.
+    #
+    # "When multiple conditional group rules are nested, a rule
+    # inside of both of them applies only when all of the rules'
+    # conditions are true."
+    # @see https://www.w3.org/TR/css3-conditional/#processing
     #
     # The imports are dynamically loaded and evaluated with
     # the root document together. The result shows the final
@@ -176,16 +183,43 @@ module CssCompare
       # @param [Sass::Tree::MediaNode] node the node
       #   representing the @media directive.
       # @return [Void]
-      def process_media_node(node)
-        queries = node.resolved_query.queries.inject([]) {|queries, q| queries << q.to_css}
-        queries = ['all'] if queries.empty?
+      def process_media_node(node, parent_query_list = [])
+        query_list = node.resolved_query.queries.inject([]) {|queries, q| queries << q.to_css}
+        query_list = merge_nested_query_lists(parent_query_list, query_list) unless parent_query_list.empty?
+        query_list = ['all'] if query_list.empty?
         rules = node.children
         rules.each do |child|
-          if child.is_a?(Sass::Tree::RuleNode)
-            process_rule_node(child, queries)
+          if child.is_a?(Sass::Tree::MediaNode)
+            process_media_node(child, query_list - ['all'])
+          elsif child.is_a?(Sass::Tree::RuleNode)
+            process_rule_node(child, query_list)
           elsif child.is_a?(Sass::Tree::DirectiveNode)
-            process_keyframes_node(child, queries) if child.name == '@keyframes'
+            process_keyframes_node(child, query_list) if child.name == '@keyframes'
           end
+        end
+      end
+
+      # Merges the parent media queries with its child
+      # media queries resulting in their combination.
+      # Makes the nested @media queries possible to support
+      # in a limited manner. The parent-child relation is
+      # represented by a linking `>` character.
+      #
+      # @example:
+      #   merge_nested_query_lists(["tv", "screen and (color)"], ["(color)", "(min-height: 100px)"]) #=>
+      #   [
+      #     "tv > (color)",
+      #     "tv > (min-height: 100px)",
+      #     "screen and (color) > (color)",
+      #     "screen and (color) > (min-height: 100px)"
+      #   ]
+      #
+      # @param [Array<String>] parent list of parent media queries
+      # @param [Array<String>] child list of child media queries
+      # @return [Array<String>] the combined media queries
+      def merge_nested_query_lists(parent, child)
+        parent.product(child).collect do |pair|
+          pair.first + ' > ' + pair.last
         end
       end
 
@@ -436,9 +470,22 @@ module CssCompare
       # @return [Void]
       def process_import_node(node)
         dir = Pathname.new(@filename).dirname
-        import_filename = node.resolved_uri.scan(/^url\((.+)\)$/).first.first
+        import_filename = node.resolved_uri.scan(/^[url\(]*['|"]*([^'"]+)['|"]*\)*$/).first.first
         import_filename = (dir + import_filename).cleanpath
-        evaluate(Parser.new(import_filename).parse.freeze) if File.exist?(import_filename)
+        if File.exist?(import_filename)
+          if node.query.empty?
+            evaluate(Parser.new(import_filename).parse.freeze)
+          else
+            root = Sass::Engine.new('').to_tree
+            media_node = Sass::Tree::MediaNode.new(node.query)
+            media_node.options = node.options
+            media_node.line = 1
+            media_node = Sass::Tree::Visitors::Perform.visit(media_node)
+            media_node.children = Parser.new(import_filename).parse.children
+            root.children = [media_node]
+            evaluate(root.freeze)
+          end
+        end
       end
     end
   end
