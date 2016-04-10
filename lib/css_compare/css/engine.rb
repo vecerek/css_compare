@@ -68,7 +68,7 @@ module CssCompare
                   process_namespace_node(node)
                 when '@page'
                   #puts node.to_yaml
-                  #process_page_node(node)
+                  process_page_node(node)
                 else
                   # Unsupported DirectiveNodes, that have a name property
                   @unsupported << node
@@ -111,6 +111,31 @@ module CssCompare
         @pages.inject(engine[:pages]) {|arr, (_,p)| arr << p.to_json }
         @supports.inject(engine[:supports]) {|arr, (_,s)| arr << s.to_json}
         engine
+      end
+
+      # Creates a deep copy of this object.
+      #
+      # @return [Engine]
+      def deep_copy
+        copy = dup
+        copy.selectors = @selectors.inject({}) do |result,(k,v)|
+          result.update(k => v.deep_copy)
+        end
+        copy.keyframes = @keyframes.inject({}) do |result,(k,v)|
+          result.update(k => v.deep_copy)
+        end
+        #copy.pages = {}
+        copy.supports = @supports.inject({}) do |result,(k,v)|
+          result.update(k => v.deep_copy)
+        end
+        copy.engine = {
+            :selectors => copy.selectors,
+            :keyframes => copy.keyframes,
+            :namespaces => copy.namespaces,
+            :pages => copy.pages,
+            :supports => copy.supports
+        }
+        copy
       end
 
       private
@@ -333,7 +358,11 @@ module CssCompare
       end
 
       def save_page_selector(page_selector)
-
+        if @pages[page_selector.value]
+          @pages[page_selector.value].merge(page_selector)
+        else
+          @pages[page_selector.value] = page_selector
+        end
       end
 
       # Processes and saves a {SupportsNode}.
@@ -352,31 +381,6 @@ module CssCompare
         else
           @supports[supports.name] = supports
         end
-      end
-
-      # Creates a deep copy of this object.
-      #
-      # @return [Engine]
-      def deep_copy
-        copy = dup
-        copy.selectors = @selectors.inject({}) do |result,(k,v)|
-          result.update(k => v.deep_copy)
-        end
-        copy.keyframes = @keyframes.inject({}) do |result,(k,v)|
-          result.update(k => v.deep_copy)
-        end
-        #copy.pages = {}
-        copy.supports = @supports.inject({}) do |result,(k,v)|
-          result.update(k => v.deep_copy)
-        end
-        copy.engine = {
-            :selectors => copy.selectors,
-            :keyframes => copy.keyframes,
-            :namespaces => copy.namespaces,
-            :pages => copy.pages,
-            :supports => copy.supports
-        }
-        copy
       end
     end
   end
