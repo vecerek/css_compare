@@ -50,9 +50,13 @@ module CssCompare
       # Computes the values of each declared selector's properties
       # under each condition declared by the @media directives.
       #
+      # @param [Sass::Tree::RootNode] tree the tree that needs to
+      #   be evaluates. The default option is the engine's own tree.
+      #   However, to support the @import directives, we'll have to
+      #   be able to pass a tree in a parameter.
       # @return [Void]
-      def evaluate!
-        @tree.children.each do |node|
+      def evaluate(tree = @tree)
+        tree.children.each do |node|
           if node.is_a?(Sass::Tree::MediaNode)
             process_media_node(node)
           elsif node.is_a?(Sass::Tree::RuleNode)
@@ -60,22 +64,23 @@ module CssCompare
           elsif node.is_a?(Sass::Tree::DirectiveNode)
             if node.is_a?(Sass::Tree::SupportsNode)
               process_supports_node(node)
-            elsif node.name
-              case node.name
-                when '@keyframes'
-                  process_keyframes_node(node)
-                when '@namespace'
-                  process_namespace_node(node)
-                when '@page'
-                  #puts node.to_yaml
-                  process_page_node(node)
-                else
-                  # Unsupported DirectiveNodes, that have a name property
-                  @unsupported << node
-              end
             else
-              # Unsupported DirectiveNodes, that do not have a name property
-              @unsupported << node
+              begin
+                case node.name
+                  when '@keyframes'
+                    process_keyframes_node(node)
+                  when '@namespace'
+                    process_namespace_node(node)
+                  when '@page'
+                    process_page_node(node)
+                  else
+                    # Unsupported DirectiveNodes, that have a name property
+                    @unsupported << node
+                end
+              rescue NotImplementedError
+                # Unsupported DirectiveNodes, that do not implement a name getter
+                @unsupported << node
+              end
             end
           elsif node.is_a?(Sass::Tree::CharsetNode)
             process_charset_node(node)
@@ -143,11 +148,22 @@ module CssCompare
       # Processes the queries of the @media directive and
       # starts processing its {Sass::Tree::RulesetNode}.
       #
+      # These media queries are equal:
+      #   @media all { … }
+      #   @media { … }
+      #
+      # @todo The queries should be simplified and evaluated.
+      #   For example, these are also equal queries:
+      #     @media all and (min-width:500px) { … }
+      #     @media (min-width:500px) { … }
+      #   @see https://www.w3.org/TR/css3-mediaqueries/#media0
+      #
       # @param [Sass::Tree::MediaNode] node the node
       #   representing the @media directive.
       # @return [Void]
       def process_media_node(node)
         queries = node.resolved_query.queries.inject([]) {|queries, q| queries << q.to_css}
+        queries = ['all'] if queries.empty?
         rules = node.children
         rules.each do |child|
           if child.is_a?(Sass::Tree::RuleNode)
@@ -305,17 +321,16 @@ module CssCompare
       # @param [Sass::Tree::DirectiveNode] node the node containing
       #   information about and the keyframe rules of the @keyframes
       #   directive.
+      # @param conditions (see #process_rule_node)
       # @return [Void]
       def process_keyframes_node(node, conditions = ['all'])
         keyframes = Component::Keyframes.new(node, conditions)
         save_keyframes(keyframes)
       end
 
-      # Saves the keyframes into the collection.
-      # If keyframes already exists, merges it with
-      # the existing value.
+      # Saves the keyframes into its collection.
       #
-      # @return [Void]
+      # @see #save_selector
       def save_keyframes(keyframes)
         if @keyframes[keyframes.name]
           @keyframes[keyframes.name].merge(keyframes)
@@ -348,6 +363,14 @@ module CssCompare
         @namespaces.update(values[0].to_sym => values[1])
       end
 
+      # Processes the page node's all selectors. Instantiates one
+      # of them and creates a deep copy of itself for every
+      # leftover page selector.
+      # @see #process_rule_node
+      #
+      # @param [Sass::Tree::DirectiveNode] node
+      # @param conditions (see #process_rule_node)
+      # @return [Void]
       def process_page_node(node, conditions = ['all'])
         selectors = node.value[1].strip.split(/,\s+/)
         page_selector = Component::PageSelector.new(selectors.shift, node.children, conditions)
@@ -357,6 +380,9 @@ module CssCompare
         end
       end
 
+      # Saves the page selector into its collection.
+      #
+      # @see #save_selector
       def save_page_selector(page_selector)
         if @pages[page_selector.value]
           @pages[page_selector.value].merge(page_selector)
@@ -375,6 +401,9 @@ module CssCompare
         save_supports(supports)
       end
 
+      # Saves the supports rule into its collection.
+      #
+      # @see #save_selector
       def save_supports(supports)
         if @supports[supports.name]
           @supports[supports.name].merge(supports)
