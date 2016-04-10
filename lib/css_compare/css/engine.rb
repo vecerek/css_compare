@@ -1,5 +1,6 @@
 require 'yaml'
 require 'json'
+require 'pathname'
 
 module CssCompare
   module CSS
@@ -10,13 +11,24 @@ module CssCompare
     # It can handle:
     #   - simple property overriding
     #   - property overriding with !import
-    #   - @media queries overriding
+    #   - @import rules
+    #   - @media queries
+    #   - @keyframes rules
+    #   - @namespace rules
+    #   - @charset rules
+    #   - @page rules
+    #   - @supports rules
     #
-    # However, the last is not 100% reliable, since
-    # the media query is not interpreted and evaluated
-    # by the engine. The query is stringified as a whole,
-    # instead and used as the key for selector-property
-    # pairs.
+    # However, the @media and @supports evaluations are not
+    # 100% reliable, since the conditions of each directive
+    # are not interpreted and evaluated by the engine. Instead,
+    # they are stringified as a whole and used as the key
+    # for their selector-property pairs.
+    #
+    # The imports are dynamically loaded and evaluated with
+    # the root document together. The result shows the final
+    # values of each CSS properties and rules, just like a
+    # browser would interpret the linked CSS stylesheets.
     class Engine
       # The inner representation of the computed properties
       # of each selector under every condition specified by
@@ -37,6 +49,7 @@ module CssCompare
       def initialize(input)
         @tree = Parser.new(input).parse.freeze if input.is_a?(String)
         @tree = input.freeze if input.is_a?(Sass::Tree::Node)
+        @filename = @tree.options[:filename]
         @engine = {}
         @selectors = {}
         @keyframes = {}
@@ -64,6 +77,8 @@ module CssCompare
           elsif node.is_a?(Sass::Tree::DirectiveNode)
             if node.is_a?(Sass::Tree::SupportsNode)
               process_supports_node(node)
+            elsif node.is_a?(Sass::Tree::CssImportNode)
+              process_import_node(node)
             else
               begin
                 case node.name
@@ -410,6 +425,19 @@ module CssCompare
         else
           @supports[supports.name] = supports
         end
+      end
+
+      # Processes the @import rule, if the file can
+      # be found, otherwise it just skips the import
+      # file evaluation.
+      #
+      # @param [Sass::Tree::CssImportNode] node the
+      #   @import rule to be processed
+      # @return [Void]
+      def process_import_node(node)
+        dir = Pathname.new(@filename).dirname
+        import_filename = dir + node.resolved_uri.scan(/^url\((.+)\)$/).first.first
+        evaluate(Parser.new(import_filename).parse.freeze) if File.exist?(import_filename)
       end
     end
   end

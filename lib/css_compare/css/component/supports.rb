@@ -24,7 +24,7 @@ module CssCompare
         def initialize(node)
           @name = node.name
           @rules = {}
-          rules = CssCompare::CSS::Engine.new(node).evaluate!
+          rules = CssCompare::CSS::Engine.new(node).evaluate
           condition = node.condition.to_css.gsub(/\s*!important\s*/, '')
           @rules[condition] = rules
         end
