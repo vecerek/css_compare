@@ -436,7 +436,8 @@ module CssCompare
       # @return [Void]
       def process_import_node(node)
         dir = Pathname.new(@filename).dirname
-        import_filename = dir + node.resolved_uri.scan(/^url\((.+)\)$/).first.first
+        import_filename = node.resolved_uri.scan(/^url\((.+)\)$/).first.first
+        import_filename = (dir + import_filename).cleanpath
         evaluate(Parser.new(import_filename).parse.freeze) if File.exist?(import_filename)
       end
     end
