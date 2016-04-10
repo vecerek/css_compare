@@ -33,7 +33,7 @@ module CssCompare
         # @return [Void]
         def merge(other)
           other.properties.each do |_,prop|
-            add_property(prop)
+            add_property(prop, true)
           end
         end
 
@@ -49,7 +49,7 @@ module CssCompare
         # @param [Boolean] deep_copy tells, whether a
         #   deep copy should be applied onto the property.
         # @return [Void]
-        def add_property(prop, deep_copy = true)
+        def add_property(prop, deep_copy = false)
           name = prop.name
           if @properties[name]
             @properties[name].merge(prop)
@@ -84,6 +84,7 @@ module CssCompare
           @properties.inject(json[key]) do |result, (k,v)|
             result.update(k => v.to_json)
           end
+          json
         end
 
         private

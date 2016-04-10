@@ -65,6 +65,7 @@ module CssCompare
           @rules.inject(json[:rules]) do |result,(k,v)|
             result.update(k => v.to_json)
           end
+          json
         end
 
         private

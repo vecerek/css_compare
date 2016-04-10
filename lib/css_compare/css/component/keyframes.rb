@@ -64,11 +64,12 @@ module CssCompare
         def to_json
           json = { :name => @name.to_sym, :rules => {} }
           @rules.inject(json[:rules]) do |frames, (cond,rules)|
-            frames[cond] = {}
-            rules.inject(frames[cond]) do |result, (value,rule)|
+            rules.inject(frames[cond.to_sym] = {}) do |result, (value,rule)|
               result.update(value.to_sym => rule.to_json)
             end
+            frames
           end
+          json
         end
 
         # Assigns the processed rules to the passed conditions
