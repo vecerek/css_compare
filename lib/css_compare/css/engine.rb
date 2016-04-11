@@ -37,6 +37,7 @@ module CssCompare
     # values of each CSS properties and rules, just like a
     # browser would interpret the linked CSS stylesheets.
     class Engine
+      include CssCompare::CSS::Component
       # The inner representation of the computed properties
       # of each selector under every condition specified by
       # the declared @media directives.
@@ -445,7 +446,7 @@ module CssCompare
       # @see {Component::Supports}
       # @param [Sass::Tree::SupportsNode] node
       # @return [Void]
-      def process_supports_node(node)
+      def process_supports_node(node, conditions = [])
         supports = Component::Supports.new(node)
         save_supports(supports)
       end
@@ -476,13 +477,9 @@ module CssCompare
           if node.query.empty?
             evaluate(Parser.new(import_filename).parse.freeze)
           else
-            root = Sass::Engine.new('').to_tree
-            media_node = Sass::Tree::MediaNode.new(node.query)
-            media_node.options = node.options
-            media_node.line = 1
-            media_node = Sass::Tree::Visitors::Perform.visit(media_node)
-            media_node.children = Parser.new(import_filename).parse.children
-            root.children = [media_node]
+            media_children = Parser.new(import_filename).parse.children
+            media_node = media_node(node.query, media_children, node.options)
+            root = root_node(media_node)
             evaluate(root.freeze)
           end
         end
