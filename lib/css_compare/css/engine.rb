@@ -60,6 +60,7 @@ module CssCompare
         @filename = @tree.options[:filename]
         @engine = {}
         @selectors = {}
+        @font_faces = {}
         @keyframes = {}
         @namespaces = {}
         @pages = {}
@@ -120,6 +121,7 @@ module CssCompare
           end
         end
         @engine[:selectors] = @selectors
+        @engine[:font_faces] = @font_faces
         @engine[:keyframes] = @keyframes
         @engine[:namespaces] = @namespaces
         @engine[:pages] = @pages
@@ -135,6 +137,7 @@ module CssCompare
       def to_json
         engine = {
             :selectors => [],
+            :font_faces => {},
             :keyframes => [],
             :namespaces => @namespaces,
             :pages => [],
@@ -142,6 +145,14 @@ module CssCompare
             :charset => @charset
         }
         @selectors.inject(engine[:selectors]) {|arr, (_,s)| arr << s.to_json }
+        @font_faces.inject(engine[:font_faces]) do |arr ,(cond,font_families)|
+          arr[cond] = font_families.inject([]) do |font_faces,(_,font_family)|
+            font_faces + font_family.inject([]) do |sum,(_,font_face)|
+              sum << font_face.to_json
+            end
+          end
+          arr
+        end
         @keyframes.inject(engine[:keyframes]) {|arr, (_,k)| arr << k.to_json }
         @pages.inject(engine[:pages]) {|arr, (_,p)| arr << p.to_json }
         @supports.inject(engine[:supports]) {|arr, (_,s)| arr << s.to_json}
@@ -497,8 +508,36 @@ module CssCompare
         end
       end
 
+      # Processes the @font-face rule.
+      #
+      # @param [Sass::Tree::DirectiveNode] node the
+      #   @font-face rule to be processed
+      # @param [Array<String>] parent_query_list (see #evaluate)
+      # @return [Void]
       def process_font_face_node(node, parent_query_list = [])
-        ;
+        save_font_face(Component::FontFace.new(node.children), parent_query_list)
+      end
+
+      # Save the @font-face rule to its collection
+      # grouped by:
+      #   - the parent media query conditions
+      #   - `font-family` value
+      #   - `src` value
+      #
+      # @param [Component::FontFace] font_face the
+      #   font-face to save
+      # @param [Array<String>] query_list (see #evaluate)
+      # @return [Void]
+      def save_font_face(font_face, query_list)
+        if font_face.valid?
+          family = font_face.family
+          src = font_face.src
+          query_list.each do |query|
+            @font_faces[query] ||= {}
+            @font_faces[query][family] ||= {}
+            @font_faces[query][family].update(src => font_face)
+          end
+        end
       end
     end
   end

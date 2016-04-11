@@ -6,6 +6,7 @@ require 'css_compare/css/component/keyframes'
 require 'css_compare/css/component/supports'
 require 'css_compare/css/component/margin_box'
 require 'css_compare/css/component/page_selector'
+require 'css_compare/css/component/font_face'
 
 module CssCompare
   module CSS
