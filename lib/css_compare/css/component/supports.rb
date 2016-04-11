@@ -6,7 +6,7 @@ module CssCompare
       # @see https://www.w3.org/TR/css3-conditional/#at-supports
       class Supports
         include CssCompare::CSS::Component
-        
+
         # The name of the @support directive.
         # Can be browser-prefixed.
         #
