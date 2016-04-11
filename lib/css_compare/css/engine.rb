@@ -5,7 +5,7 @@ require 'pathname'
 module CssCompare
   module CSS
     # The CSS Engine that computes the values of the
-    # properties under all the declared conditions in
+    # properties under all the declared parent_query_list in
     # the stylesheet.
     #
     # It can handle:
@@ -22,14 +22,14 @@ module CssCompare
     #   - @supports rules
     #
     # However, the @media and @supports evaluations are not
-    # 100% reliable, since the conditions of each directive
+    # 100% reliable, since the parent_query_list of each directive
     # are not interpreted and evaluated by the engine. Instead,
     # they are stringified as a whole and used as the key
     # for their selector-property pairs.
     #
     # "When multiple conditional group rules are nested, a rule
     # inside of both of them applies only when all of the rules'
-    # conditions are true."
+    # parent_query_list are true."
     # @see https://www.w3.org/TR/css3-conditional/#processing
     #
     # The imports are dynamically loaded and evaluated with
@@ -100,7 +100,9 @@ module CssCompare
                   when '@namespace'
                     process_namespace_node(node)
                   when '@page'
-                    process_page_node(node)
+                    process_page_node(node, parent_query_list)
+                  when '@font-face'
+                    process_font_face_node(node, parent_query_list)
                   else
                     # Unsupported DirectiveNodes, that have a name property
                     @unsupported << node
@@ -243,7 +245,7 @@ module CssCompare
       #   a small change in the the selector's name.
       #
       # @param [Sass::Tree:RuleNode] node the Rule node
-      # @param [Array<String>] conditions processed conditions of the
+      # @param [Array<String>] parent_query_list processed parent_query_list of the
       #   parent media node. If the rule is global, it will be assigned
       #   to the media query equal to `@media all {}`.
       # @return [Void]
@@ -427,11 +429,11 @@ module CssCompare
       # @see #process_rule_node
       #
       # @param [Sass::Tree::DirectiveNode] node
-      # @param conditions (see #process_rule_node)
+      # @param parent_query_list (see #process_rule_node)
       # @return [Void]
-      def process_page_node(node, conditions = ['all'])
+      def process_page_node(node, parent_query_list = ['all'])
         selectors = node.value[1].strip.split(/,\s+/)
-        page_selector = Component::PageSelector.new(selectors.shift, node.children, conditions)
+        page_selector = Component::PageSelector.new(selectors.shift, node.children, parent_query_list)
         save_page_selector(page_selector)
         selectors.each do |selector|
           save_page_selector(page_selector.deep_copy(selector))
@@ -493,6 +495,10 @@ module CssCompare
             evaluate(root.freeze, parent_query_list)
           end
         end
+      end
+
+      def process_font_face_node(node, parent_query_list = [])
+        ;
       end
     end
   end
