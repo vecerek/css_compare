@@ -157,7 +157,9 @@ module CssCompare
         copy.keyframes = @keyframes.inject({}) do |result,(k,v)|
           result.update(k => v.deep_copy)
         end
-        #copy.pages = {}
+        copy.pages = @supports.inject({}) do |result,(k,v)|
+          result.update(k => v.deep_copy)
+        end
         copy.supports = @supports.inject({}) do |result,(k,v)|
           result.update(k => v.deep_copy)
         end
