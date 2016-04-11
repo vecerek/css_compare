@@ -5,6 +5,8 @@ module CssCompare
       #
       # @see https://www.w3.org/TR/css3-conditional/#at-supports
       class Supports
+        include CssCompare::CSS::Component
+        
         # The name of the @support directive.
         # Can be browser-prefixed.
         #
@@ -21,11 +23,18 @@ module CssCompare
         attr_accessor :rules
 
         # @param [Sass::Tree::SupportsNode] node
-        def initialize(node)
+        # @param [Array<String>] query_list the query list of
+        #   the parent node (the conditions under which this
+        #   node is evaluated).
+        def initialize(node, query_list = [])
           @name = node.name
           @rules = {}
-          rules = CssCompare::CSS::Engine.new(node).evaluate
           condition = node.condition.to_css.gsub(/\s*!important\s*/, '')
+          unless query_list.empty?
+            media_node = media_node([Engine::GLOBAL_QUERY], node.children, node.options)
+            node = root_node(media_node, node.options)
+          end
+          rules = CssCompare::CSS::Engine.new(node).evaluate(nil, query_list)
           @rules[condition] = rules
         end
 

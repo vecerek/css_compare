@@ -75,18 +75,23 @@ module CssCompare
       #   be evaluates. The default option is the engine's own tree.
       #   However, to support the @import directives, we'll have to
       #   be able to pass a tree in a parameter.
+      # @param [Array<String>] parent_query_list the list of parent
+      #   queries
+      # @note the second parameter has been added to ensure multiply
+      #   nested @media, @support and @import rules.
       # @return [Void]
-      def evaluate(tree = @tree)
+      def evaluate(tree = @tree, parent_query_list = [])
+        tree = @tree unless tree #if nil is passed explicitly
         tree.children.each do |node|
           if node.is_a?(Sass::Tree::MediaNode)
-            process_media_node(node)
+            process_media_node(node, parent_query_list)
           elsif node.is_a?(Sass::Tree::RuleNode)
-            process_rule_node(node)
+            process_rule_node(node, parent_query_list)
           elsif node.is_a?(Sass::Tree::DirectiveNode)
             if node.is_a?(Sass::Tree::SupportsNode)
               process_supports_node(node)
             elsif node.is_a?(Sass::Tree::CssImportNode)
-              process_import_node(node)
+              process_import_node(node, parent_query_list)
             else
               begin
                 case node.name
@@ -166,6 +171,8 @@ module CssCompare
         copy
       end
 
+      GLOBAL_QUERY = 'all'
+
       private
 
       # Processes the queries of the @media directive and
@@ -183,15 +190,21 @@ module CssCompare
       #
       # @param [Sass::Tree::MediaNode] node the node
       #   representing the @media directive.
+      # @param [Array<String>] parent_query_list (see #evaluate)
       # @return [Void]
       def process_media_node(node, parent_query_list = [])
         query_list = node.resolved_query.queries.inject([]) {|queries, q| queries << q.to_css}
+        query_list -= [GLOBAL_QUERY]
         query_list = merge_nested_query_lists(parent_query_list, query_list) unless parent_query_list.empty?
-        query_list = ['all'] if query_list.empty?
+        query_list = [GLOBAL_QUERY] if query_list.empty?
         rules = node.children
         rules.each do |child|
-          if child.is_a?(Sass::Tree::MediaNode)
-            process_media_node(child, query_list - ['all'])
+          if child.is_a?(Sass::Tree::SupportsNode)
+            process_supports_node(child, query_list - [GLOBAL_QUERY])
+          elsif child.is_a?(Sass::Tree::MediaNode)
+            process_media_node(child, query_list - [GLOBAL_QUERY])
+          elsif child.is_a?(Sass::Tree::CssImportNode)
+            process_import_node(child, query_list - [GLOBAL_QUERY])
           elsif child.is_a?(Sass::Tree::RuleNode)
             process_rule_node(child, query_list)
           elsif child.is_a?(Sass::Tree::DirectiveNode)
@@ -219,8 +232,14 @@ module CssCompare
       # @param [Array<String>] child list of child media queries
       # @return [Array<String>] the combined media queries
       def merge_nested_query_lists(parent, child)
-        parent.product(child).collect do |pair|
-          pair.first + ' > ' + pair.last
+        if parent.empty?
+          child
+        elsif child.empty?
+          parent
+        else
+          parent.product(child).collect do |pair|
+            pair.first + ' > ' + pair.last
+          end
         end
       end
 
@@ -240,7 +259,8 @@ module CssCompare
       #   parent media node. If the rule is global, it will be assigned
       #   to the media query equal to `@media all {}`.
       # @return [Void]
-      def process_rule_node(node, conditions = ['all'])
+      def process_rule_node(node, conditions)
+        conditions = [GLOBAL_QUERY] if conditions.empty?
         selectors = selector_sequences(node)
         selector = Component::Selector.new(selectors.shift, node.children, conditions)
         save_selector(selector)
@@ -445,9 +465,10 @@ module CssCompare
       #
       # @see {Component::Supports}
       # @param [Sass::Tree::SupportsNode] node
+      # @param [Array<String>] parent_query_list (see #evaluate)
       # @return [Void]
-      def process_supports_node(node, conditions = [])
-        supports = Component::Supports.new(node)
+      def process_supports_node(node, parent_query_list = [])
+        supports = Component::Supports.new(node, parent_query_list)
         save_supports(supports)
       end
 
@@ -468,19 +489,20 @@ module CssCompare
       #
       # @param [Sass::Tree::CssImportNode] node the
       #   @import rule to be processed
+      # @param [Array<String>] parent_query_list (see #evaluate)
       # @return [Void]
-      def process_import_node(node)
+      def process_import_node(node, parent_query_list = [])
         dir = Pathname.new(@filename).dirname
-        import_filename = node.resolved_uri.scan(/^[url\(]*['|"]*([^'"]+)['|"]*\)*$/).first.first
+        import_filename = node.resolved_uri.scan(/^[url\(]*['|"]*([^'")]+)[['|"]*\)*]*$/).first.first
         import_filename = (dir + import_filename).cleanpath
         if File.exist?(import_filename)
           if node.query.empty?
-            evaluate(Parser.new(import_filename).parse.freeze)
+            evaluate(Parser.new(import_filename).parse.freeze, parent_query_list)
           else
             media_children = Parser.new(import_filename).parse.children
             media_node = media_node(node.query, media_children, node.options)
-            root = root_node(media_node)
-            evaluate(root.freeze)
+            root = root_node(media_node, media_node.options)
+            evaluate(root.freeze, parent_query_list)
           end
         end
       end
