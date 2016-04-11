@@ -96,7 +96,7 @@ module CssCompare
               begin
                 case node.name
                   when '@keyframes'
-                    process_keyframes_node(node)
+                    process_keyframes_node(node, parent_query_list)
                   when '@namespace'
                     process_namespace_node(node)
                   when '@page'
@@ -196,21 +196,7 @@ module CssCompare
         query_list = node.resolved_query.queries.inject([]) {|queries, q| queries << q.to_css}
         query_list -= [GLOBAL_QUERY]
         query_list = merge_nested_query_lists(parent_query_list, query_list) unless parent_query_list.empty?
-        query_list = [GLOBAL_QUERY] if query_list.empty?
-        rules = node.children
-        rules.each do |child|
-          if child.is_a?(Sass::Tree::SupportsNode)
-            process_supports_node(child, query_list - [GLOBAL_QUERY])
-          elsif child.is_a?(Sass::Tree::MediaNode)
-            process_media_node(child, query_list - [GLOBAL_QUERY])
-          elsif child.is_a?(Sass::Tree::CssImportNode)
-            process_import_node(child, query_list - [GLOBAL_QUERY])
-          elsif child.is_a?(Sass::Tree::RuleNode)
-            process_rule_node(child, query_list)
-          elsif child.is_a?(Sass::Tree::DirectiveNode)
-            process_keyframes_node(child, query_list) if child.name == '@keyframes'
-          end
-        end
+        evaluate(node, query_list)
       end
 
       # Merges the parent media queries with its child
