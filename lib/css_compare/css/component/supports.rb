@@ -4,7 +4,7 @@ module CssCompare
       # Represents the @support CSS rule.
       #
       # @see https://www.w3.org/TR/css3-conditional/#at-supports
-      class Supports
+      class Supports < Base
         include CssCompare::CSS::Component
 
         # The name of the @support directive.
@@ -16,7 +16,7 @@ module CssCompare
         # The assigned rules grouped by the @supports'
         # conditions.
         #
-        # @supports van contain the same rules as a CSS
+        # @supports can contain the same rules as a CSS
         # stylesheet. Why not to create a new engine for it?
         #
         # @return [Hash{String => CssCompare::CSS::Engine}]
@@ -36,6 +36,18 @@ module CssCompare
           end
           rules = CssCompare::CSS::Engine.new(node).evaluate(nil, query_list)
           @rules[condition] = rules
+        end
+
+        # Checks, whether two @supports rules are equal.
+        #
+        # They are only equal, if all of their rules are
+        # equal.
+        #
+        # @param [Supports] other the supports rule to compare
+        #   this to.
+        # @return [Boolean]
+        def ==(other)
+          super(@rules, other.rules)
         end
 
         # Merges this @supports rule with another one.

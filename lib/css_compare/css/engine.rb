@@ -69,6 +69,20 @@ module CssCompare
         @charset
       end
 
+      # Checks, whether two engines are equal.
+      #
+      # They are equal only if the same symbols are defined
+      # and each and every component under those keys are
+      # also equal.
+      #
+      # @param [Engine] other the engine to compare this with.
+      # @return [Boolean]
+      def ==(other)
+        keys = @engine.keys + other.engine.keys
+        return false unless keys.uniq! #@todo this won't work
+        keys.all? {|key| @engine[key] == other.engine[key] }
+      end
+
       # Computes the values of each declared selector's properties
       # under each condition declared by the @media directives.
       #

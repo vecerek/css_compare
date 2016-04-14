@@ -4,7 +4,7 @@ module CssCompare
       # Represents an @keyframes declaration
       #
       # @see https://www.w3.org/TR/css3-animations/#keyframes
-      class Keyframes
+      class Keyframes < Base
         # The name of the keyframes.
         #
         # @return [String] the name
@@ -32,6 +32,25 @@ module CssCompare
         def initialize(node, conditions)
           @name = node.value[1]
           process_conditions(conditions, process_rules(node.children))
+        end
+
+        # Checks, whether two @keyframes are equal.
+        #
+        # Two @keyframes are only equal, if they both have equal
+        # keyframe selectors under each and every condition.
+        # If a condition or frame is missing from one or another,
+        # the @keyframes are not equal.
+        #
+        # @param [Keyframes] other the @keyframe to compare this
+        #   with.
+        # @param [Boolean]
+        def ==(other)
+          conditions = @rules.keys + other.rules.keys
+          conditions.uniq!
+          conditions.all? do |condition|
+            return false unless @rules[condition] && other.rules[condition]
+            super(@rules[condition], other.rules[condition])
+          end
         end
 
         # Merges this selector with another one.

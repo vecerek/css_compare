@@ -114,6 +114,8 @@ END
     def run
       result = CssCompare::Engine.new(@options)
                    .parse!
+                   .equal?
+      puts result.to_s
     end
   end
 end

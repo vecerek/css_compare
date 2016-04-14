@@ -3,13 +3,23 @@ module CssCompare
     module Component
       # Represents the value of a CSS property under
       # certain conditions declared by @media queries.
-      class Value
+      class Value < Base
         # @return [#to_s]
         attr_accessor :value
 
         # @param [#to_s] val the value of the property
         def initialize(val)
           self.value = val
+        end
+
+        # Checks whether two values are equal.
+        # Equal values mean, that the actual value and
+        # the importance, as well, are set equally.
+        #
+        # @param [Value] other the value to compare this with
+        # @return [Boolean]
+        def ==(other)
+          @value.to_s == other.value.to_s
         end
 
         # Sets the value and the importance of

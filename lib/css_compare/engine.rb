@@ -15,5 +15,17 @@ module CssCompare
       @options[:operands].each {|operand| @operands << CSS::Engine.new(operand).evaluate }
       self
     end
+
+    # Checks, whether the parsed CSS files are equal.
+    #
+    # The CSS files are equal, if they define the same
+    # components, that are also equal and at the same
+    # time, no component is missing from either of the
+    # files.
+    #
+    # @return [Boolean]
+    def equal?
+      @operands.first == @operands.last
+    end
   end
 end

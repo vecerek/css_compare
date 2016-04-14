@@ -5,7 +5,7 @@ module CssCompare
       # .a.b.c > div.f:first-child.
       #
       # @see https://www.w3.org/TR/css3-selectors/#selectors
-      class Selector
+      class Selector < Base
         # @return [String] selector's name
         attr_accessor :name
 
@@ -23,6 +23,17 @@ module CssCompare
           @name = name
           @properties = {}
           process_properties(properties, conditions)
+        end
+
+        # Checks, whether two selector are equal.
+        #
+        # Two selectors are equal only if they both have declared
+        # the same properties and they are also equal.
+        #
+        # @param [Selector] other the selector to compare this with.
+        # @return [Boolean]
+        def ==(other)
+          super(@properties, other.properties)
         end
 
         # Combines the selector's properties with the

@@ -19,7 +19,7 @@ module CssCompare
       # a case-insensitive manner.
       #
       # @see https://www.w3.org/TR/css-fonts-3/#font-face-rule
-      class FontFace
+      class FontFace < Base
         attr_reader :declarations
 
         # @param [Array<Sass::Tree::PropNode>] children font properties
@@ -27,6 +27,18 @@ module CssCompare
           @declarations = {}
           init_declarations
           process_declarations(children)
+        end
+
+        # Checks, whether two @font-face declarations are equal.
+        #
+        # No need to check, whether both font-faces have the same
+        # keys, since they are also initialized with the default
+        # values.
+        #
+        # @param [FontFace] other the @font-face to compare this
+        #   with.
+        def ==(other)
+          @declarations.all? {|k,_| @declarations[k] === other.declarations[k] }
         end
 
         # Tells, whether this rule is valid or not.

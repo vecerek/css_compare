@@ -11,7 +11,7 @@ module CssCompare
       # margin symbol.
       #
       # @see https://www.w3.org/TR/css3-page/
-      class PageSelector
+      class PageSelector < Base
         # The value of this page selector
         #
         # @return [String]
@@ -33,6 +33,19 @@ module CssCompare
           @value = value
           @margin_boxes = {}
           process_margin_boxes(children, conditions)
+        end
+
+        # Checks, whether two page selectors are equal.
+        #
+        # Two page selectors are equal only if both have
+        # declared the same margin boxes and they are also
+        # equal.
+        #
+        # @param [PageSelector] other the page selector to
+        #   compare this with.
+        # @return [Boolean]
+        def ==(other)
+          super(@margin_boxes, other.margin_boxes)
         end
 
         # Merges this page selector with another one.

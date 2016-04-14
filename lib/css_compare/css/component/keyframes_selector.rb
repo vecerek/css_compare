@@ -7,7 +7,7 @@ module CssCompare
       #   - from { top: 0; } // also meaning the same as 0%
       #   - 50%  { top: 50; }
       #   - to   { top: 100; } // also meaning the same as 100%
-      class KeyframesSelector
+      class KeyframesSelector < Base
         # The value of the rule. Possible values:  <'0%';'100%'>.
         #
         # @return [String]
@@ -24,6 +24,18 @@ module CssCompare
           @value = value(node.resolved_value)
           @properties = {}
           process_properties(node.children)
+        end
+
+        # Checks, whether two keyframes selectors are equal.
+        #
+        # They are equal only if they have declared the same
+        # properties and they are also equal.
+        #
+        # @param [KeyframesSelector] other the keyframes selector
+        #   to compare this with.
+        # @return [Boolean]
+        def ==(other)
+          super(@properties, other.properties)
         end
 
         # Returns the value represented as percentage, even if

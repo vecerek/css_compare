@@ -4,7 +4,7 @@ module CssCompare
       # Represents a CSS property tied to a specific selector.
       # It can have several values based on the conditions
       # specified by the @media queries.
-      class Property
+      class Property < Base
         # @return [String] name of the property
         attr_reader :name
 
@@ -30,6 +30,19 @@ module CssCompare
           @values = {}
           value = Value.new(node.resolved_value)
           conditions.each {|c| set_value(value.clone, c)}
+        end
+
+        # Checks whether two properties are equal.
+        #
+        # Properties are equal only if both contain
+        # the same keys and the values under those
+        # keys are also equal.
+        #
+        # @param [Property] other the property to compare this
+        #   with.
+        # @return [Boolean]
+        def ==(other)
+          super(@values, other.values)
         end
 
         # Merges the property with another one.
