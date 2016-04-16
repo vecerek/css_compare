@@ -1,6 +1,7 @@
 # css_compare
 
 Processes, evaluates and compares 2 CSS files based on their AST. The repository has been created in order to be able to test the [less2sass](https://github.com/vecerek/less2sass) project. The program returns `true` or `false` to the `$stdout`, so far.
+Uses the Sass parser to get the CSS files' AST.
 
 Supported CSS features:
 - all types of selectors (they are normalized - duplicity removal and logical/alphabetical ordering)
