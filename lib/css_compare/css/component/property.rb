@@ -29,7 +29,7 @@ module CssCompare
           @name = node.resolved_name
           @values = {}
           value = Value.new(node.resolved_value)
-          conditions.each {|c| set_value(value.clone, c)}
+          conditions.each { |c| set_value(value.clone, c) }
         end
 
         # Checks whether two properties are equal.
@@ -50,7 +50,7 @@ module CssCompare
         # @param [Property] property to be merged with `self`
         # @return [Void]
         def merge(property)
-          property.values.each {|cond, v| set_value(v, cond)}
+          property.values.each { |cond, v| set_value(v, cond) }
         end
 
         # Replaces the original value of the property under a certain
@@ -78,11 +78,11 @@ module CssCompare
           if val_to_replace
             @values[condition].value = val if val.important? || !val_to_replace.important?
           else
-            if global_value && global_value.important?
-              @values[condition] = val.important? ? val : global_value.clone
-            else
-              @values[condition] = val
-            end
+            @values[condition] = if global_value && global_value.important?
+                                   val.important? ? val : global_value.clone
+                                 else
+                                   val
+                                 end
           end
         end
 
@@ -118,7 +118,7 @@ module CssCompare
         def deep_copy
           copy = dup
           copy.values = {}
-          @values.each {|k,v| copy.values[k] = v.clone }
+          @values.each { |k, v| copy.values[k] = v.clone }
           copy
         end
 
@@ -126,12 +126,12 @@ module CssCompare
         #
         # @return [Hash]
         def to_json
-          @values.inject({}) {|result, (k,v)| result.update(k => v.to_s)}
+          @values.inject({}) { |result, (k, v)| result.update(k => v.to_s) }
         end
 
         private
 
-        COMPLEX_PROPERTIES = []
+        COMPLEX_PROPERTIES = [].freeze
 
         # Checks, whether an unprocessed value is important
         # or not

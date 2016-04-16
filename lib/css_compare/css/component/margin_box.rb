@@ -12,8 +12,7 @@ module CssCompare
       #
       # @see Selector
       class MarginBox < Selector
-
-        IGNORED_CONDITIONS = %w(width height aspect-ratio orientation)
+        IGNORED_CONDITIONS = %w(width height aspect-ratio orientation).freeze
 
         # Looks for a `size` property to delete the values
         # that should be ignored according to the @page
@@ -30,8 +29,8 @@ module CssCompare
         #
         # @see Property#add_property
         def add_property(prop, deep_copy = false)
-          prop.values.delete_if do |k,_|
-            IGNORED_CONDITIONS.any? {|condition| k.include?(condition) }
+          prop.values.delete_if do |k, _|
+            IGNORED_CONDITIONS.any? { |condition| k.include?(condition) }
           end if prop.name === 'size'
           super(prop, deep_copy)
         end
