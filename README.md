@@ -48,7 +48,7 @@ result = CssCompare::Engine.new(opts)
 ## TODO
 
 - Evaluate shorthand properties, so the values of base properties get overridden.
-- Evaluate @media rules and @supports rule conditions.
+- Evaluate @media rule's and @supports rule's conditions.
 - Output the difference, optionally.
 
 ## Contributing
