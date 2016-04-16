@@ -54,9 +54,19 @@ module CssCompare
       attr_accessor :selectors, :keyframes, :namespaces,
                   :pages, :supports, :charset
 
+      # @param [String, Sass::Tree::Node] input the source file of
+      #   the CSS project, or its AST
       def initialize(input)
-        @tree = Parser.new(input).parse.freeze if input.is_a?(String)
-        @tree = input.freeze if input.is_a?(Sass::Tree::Node)
+        @tree =
+          begin
+            if input.is_a?(String)
+              Parser.new(input).parse.freeze
+            elsif input.is_a?(Sass::Tree::Node)
+              input.freeze
+            else
+              raise ArgumentError, "The engine's input must be either a path, or a Sass::Tree::Node"
+            end
+          end
         @filename = @tree.options[:filename]
         @engine = {}
         @selectors = {}
