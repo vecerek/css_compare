@@ -52,7 +52,7 @@ module CssCompare
       attr_accessor :unsupported
 
       attr_accessor :selectors, :keyframes, :namespaces,
-                  :pages, :supports, :charset
+                    :pages, :supports, :charset
 
       # @param [String, Sass::Tree::Node] input the source file of
       #   the CSS project, or its AST
@@ -89,8 +89,8 @@ module CssCompare
       # @return [Boolean]
       def ==(other)
         keys = @engine.keys + other.engine.keys
-        return false unless keys.uniq! #@todo this won't work
-        keys.all? {|key| @engine[key] == other.engine[key] }
+        return false unless keys.uniq! # @todo this won't work
+        keys.all? { |key| @engine[key] == other.engine[key] }
       end
 
       # Computes the values of each declared selector's properties
@@ -106,7 +106,7 @@ module CssCompare
       #   nested @media, @support and @import rules.
       # @return [Void]
       def evaluate(tree = @tree, parent_query_list = [])
-        tree = @tree unless tree #if nil is passed explicitly
+        tree = @tree unless tree # if nil is passed explicitly
         tree.children.each do |node|
           if node.is_a?(Sass::Tree::MediaNode)
             process_media_node(node, parent_query_list)
@@ -120,17 +120,17 @@ module CssCompare
             else
               begin
                 case node.name
-                  when '@keyframes'
-                    process_keyframes_node(node, parent_query_list)
-                  when '@namespace'
-                    process_namespace_node(node)
-                  when '@page'
-                    process_page_node(node, parent_query_list)
-                  when '@font-face'
-                    process_font_face_node(node, parent_query_list)
-                  else
-                    # Unsupported DirectiveNodes, that have a name property
-                    @unsupported << node
+                when '@keyframes'
+                  process_keyframes_node(node, parent_query_list)
+                when '@namespace'
+                  process_namespace_node(node)
+                when '@page'
+                  process_page_node(node, parent_query_list)
+                when '@font-face'
+                  process_font_face_node(node, parent_query_list)
+                else
+                  # Unsupported DirectiveNodes, that have a name property
+                  @unsupported << node
                 end
               rescue NotImplementedError
                 # Unsupported DirectiveNodes, that do not implement a name getter
@@ -160,26 +160,26 @@ module CssCompare
       # @return [Hash]
       def to_json
         engine = {
-            :selectors => [],
-            :font_faces => {},
-            :keyframes => [],
-            :namespaces => @namespaces,
-            :pages => [],
-            :supports => [],
-            :charset => @charset
+          :selectors => [],
+          :font_faces => {},
+          :keyframes => [],
+          :namespaces => @namespaces,
+          :pages => [],
+          :supports => [],
+          :charset => @charset
         }
-        @selectors.inject(engine[:selectors]) {|arr, (_,s)| arr << s.to_json }
-        @font_faces.inject(engine[:font_faces]) do |arr ,(cond,font_families)|
-          arr[cond] = font_families.inject([]) do |font_faces,(_,font_family)|
-            font_faces + font_family.inject([]) do |sum,(_,font_face)|
+        @selectors.inject(engine[:selectors]) { |arr, (_, s)| arr << s.to_json }
+        @font_faces.inject(engine[:font_faces]) do |arr, (cond, font_families)|
+          arr[cond] = font_families.inject([]) do |font_faces, (_, font_family)|
+            font_faces + font_family.inject([]) do |sum, (_, font_face)|
               sum << font_face.to_json
             end
           end
           arr
         end
-        @keyframes.inject(engine[:keyframes]) {|arr, (_,k)| arr << k.to_json }
-        @pages.inject(engine[:pages]) {|arr, (_,p)| arr << p.to_json }
-        @supports.inject(engine[:supports]) {|arr, (_,s)| arr << s.to_json}
+        @keyframes.inject(engine[:keyframes]) { |arr, (_, k)| arr << k.to_json }
+        @pages.inject(engine[:pages]) { |arr, (_, p)| arr << p.to_json }
+        @supports.inject(engine[:supports]) { |arr, (_, s)| arr << s.to_json }
         engine
       end
 
@@ -188,29 +188,29 @@ module CssCompare
       # @return [Engine]
       def deep_copy
         copy = dup
-        copy.selectors = @selectors.inject({}) do |result,(k,v)|
+        copy.selectors = @selectors.inject({}) do |result, (k, v)|
           result.update(k => v.deep_copy)
         end
-        copy.keyframes = @keyframes.inject({}) do |result,(k,v)|
+        copy.keyframes = @keyframes.inject({}) do |result, (k, v)|
           result.update(k => v.deep_copy)
         end
-        copy.pages = @supports.inject({}) do |result,(k,v)|
+        copy.pages = @supports.inject({}) do |result, (k, v)|
           result.update(k => v.deep_copy)
         end
-        copy.supports = @supports.inject({}) do |result,(k,v)|
+        copy.supports = @supports.inject({}) do |result, (k, v)|
           result.update(k => v.deep_copy)
         end
         copy.engine = {
-            :selectors => copy.selectors,
-            :keyframes => copy.keyframes,
-            :namespaces => copy.namespaces,
-            :pages => copy.pages,
-            :supports => copy.supports
+          :selectors => copy.selectors,
+          :keyframes => copy.keyframes,
+          :namespaces => copy.namespaces,
+          :pages => copy.pages,
+          :supports => copy.supports
         }
         copy
       end
 
-      GLOBAL_QUERY = 'all'
+      GLOBAL_QUERY = 'all'.freeze
 
       private
 
@@ -218,13 +218,13 @@ module CssCompare
       # starts processing its {Sass::Tree::RulesetNode}.
       #
       # These media queries are equal:
-      #   @media all { … }
-      #   @media { … }
+      #   @media all { ... }
+      #   @media { ... }
       #
       # @todo The queries should be simplified and evaluated.
       #   For example, these are also equal queries:
-      #     @media all and (min-width:500px) { … }
-      #     @media (min-width:500px) { … }
+      #     @media all and (min-width:500px) { ... }
+      #     @media (min-width:500px) { ... }
       #   @see https://www.w3.org/TR/css3-mediaqueries/#media0
       #
       # @param [Sass::Tree::MediaNode] node the node
@@ -232,7 +232,7 @@ module CssCompare
       # @param [Array<String>] parent_query_list (see #evaluate)
       # @return [Void]
       def process_media_node(node, parent_query_list = [])
-        query_list = node.resolved_query.queries.inject([]) {|queries, q| queries << q.to_css}
+        query_list = node.resolved_query.queries.inject([]) { |queries, q| queries << q.to_css }
         query_list -= [GLOBAL_QUERY]
         query_list = merge_nested_query_lists(parent_query_list, query_list) unless parent_query_list.empty?
         evaluate(node, query_list)
@@ -315,7 +315,7 @@ module CssCompare
       # @return [Array<String>] array of selectors sharing the same
       #   block of properties.
       def selector_sequences(node)
-        node.parsed_rules.members.inject([]) {|selectors, sequence| selectors << optimize_sequence(sequence)}
+        node.parsed_rules.members.inject([]) { |selectors, sequence| selectors << optimize_sequence(sequence) }
       end
 
       # Optimizes a CSS selector selector, a selector separated
@@ -361,12 +361,12 @@ module CssCompare
         selector.members.inject([]) do |final, sequence|
           if sequence.is_a?(Sass::Selector::SimpleSequence)
             baskets = {
-                Sass::Selector::Universal => [],
-                Sass::Selector::Element => [],
-                Sass::Selector::Id => [],
-                Sass::Selector::Class => [],
-                Sass::Selector::Placeholder => [],
-                Sass::Selector::Pseudo => []
+              Sass::Selector::Universal => [],
+              Sass::Selector::Element => [],
+              Sass::Selector::Id => [],
+              Sass::Selector::Class => [],
+              Sass::Selector::Placeholder => [],
+              Sass::Selector::Pseudo => []
             }
             sequence.members.each_with_index do |simple, i|
               last = i + 1 == sequence.members.length
@@ -377,7 +377,7 @@ module CssCompare
                 baskets[simple.class] << simple.to_s
               end
             end
-            final << baskets.values.inject([]) {|partial, b| partial + b.uniq.sort}.join('')
+            final << baskets.values.inject([]) { |partial, b| partial + b.uniq.sort }.join('')
           else
             final << sequence.to_s
           end

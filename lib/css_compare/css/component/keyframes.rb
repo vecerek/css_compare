@@ -72,7 +72,7 @@ module CssCompare
         def deep_copy(name = @name)
           copy = dup
           copy.name = name
-          copy.rules = @rules.inject({}) do |result,(k,v)|
+          copy.rules = @rules.inject({}) do |result, (k, v)|
             result.update(k => v.deep_copy)
           end
         end
@@ -82,8 +82,8 @@ module CssCompare
         # @return [Hash]
         def to_json
           json = { :name => @name.to_sym, :rules => {} }
-          @rules.inject(json[:rules]) do |frames, (cond,rules)|
-            rules.inject(frames[cond.to_sym] = {}) do |result, (value,rule)|
+          @rules.inject(json[:rules]) do |frames, (cond, rules)|
+            rules.inject(frames[cond.to_sym] = {}) do |result, (value, rule)|
               result.update(value.to_sym => rule.to_json)
             end
             frames

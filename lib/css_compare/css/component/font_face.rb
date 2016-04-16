@@ -38,7 +38,7 @@ module CssCompare
         # @param [FontFace] other the @font-face to compare this
         #   with.
         def ==(other)
-          @declarations.all? {|k,_| @declarations[k] === other.declarations[k] }
+          @declarations.all? { |k, _| @declarations[k] === other.declarations[k] }
         end
 
         # Tells, whether this rule is valid or not.
@@ -73,73 +73,73 @@ module CssCompare
 
         INITIAL_VALUES = {
           :font_family => {
-              :default => nil
+            :default => nil
           },
           :src => {
-              :default => nil
+            :default => nil
           },
           :font_style => {
-              :default => 'normal',
-              :allowed => %w(normal italic oblique)
+            :default => 'normal',
+            :allowed => %w(normal italic oblique)
           },
           :font_weight => {
-              :default => '400',
-              :allowed => %w(normal bold 100 200 300 400 500 600 700 800 900),
-              :synonyms => {
-                  :normal => '400',
-                  :bold => '600'
-              }
+            :default => '400',
+            :allowed => %w(normal bold 100 200 300 400 500 600 700 800 900),
+            :synonyms => {
+              :normal => '400',
+              :bold => '600'
+            }
           },
           :font_stretch => {
-              :default => 'normal',
-              :allowed => %w(normal ultra-condensed extra-condensed condensed semi-condensed semi-expanded expanded
-                          extra-expanded ultra-expanded)
+            :default => 'normal',
+            :allowed => %w(normal ultra-condensed extra-condensed condensed semi-condensed semi-expanded expanded
+                           extra-expanded ultra-expanded)
           },
           :unicode_range => {
-              :default => 'U+0-10FFFF'
+            :default => 'U+0-10FFFF'
           },
           :font_variant => {
-              :default => 'normal',
+            :default => 'normal'
           },
           :font_feature_settings => {
-              :default => 'normal'
+            :default => 'normal'
           },
           :font_kerning => {
-              :default => 'auto',
-              :allowed => %w(auto normal none)
+            :default => 'auto',
+            :allowed => %w(auto normal none)
           },
           :font_variant_ligatures => {
-              :default => 'normal'
+            :default => 'normal'
           },
           :font_variant_position => {
-              :default => 'normal',
-              :allowed => %w(normal sub super)
+            :default => 'normal',
+            :allowed => %w(normal sub super)
           },
           :font_variant_caps => {
-              :default => 'normal',
-              :allowed => %w(normal small-caps all-small-caps petite-caps all-petite-caps unicase titling-caps)
+            :default => 'normal',
+            :allowed => %w(normal small-caps all-small-caps petite-caps all-petite-caps unicase titling-caps)
           },
           :font_variant_numeric => {
-              :default => 'normal'
+            :default => 'normal'
           },
           :font_variant_alternates => {
-              :default => 'normal'
+            :default => 'normal'
           },
           :font_variant_east_asian => {
-              :default => 'normal'
+            :default => 'normal'
           },
           :font_language_override => {
-              :default => 'normal'
-          },
+            :default => 'normal'
+          }
 
-        }
+        }.freeze
 
         # Initializes the font-face with values from
         # the official specifications.
         #
         # @return [Void]
         def init_declarations
-          INITIAL_VALUES.each {|k,v| @declarations[k.to_s.gsub('_', '-')] = v[:default] }
+          INITIAL_VALUES.each { |k, v| @declarations[k.to_s.tr('_', '-')] = v[:default] }
         end
 
         # Processes the @font-face declarations and set
@@ -153,23 +153,22 @@ module CssCompare
         # @return [Void]
         def process_declarations(children)
           children.each do |child|
-            if child.is_a?(Sass::Tree::PropNode)
-              name = child.resolved_name
-              value = child.resolved_value
-              key = name.gsub('-', '_').to_sym
-              property = INITIAL_VALUES[key]
-              next unless property
-              @declarations[name] = value.downcase if name == 'font-family'
-              @declarations[name] = value.gsub(/'|"/, '') if name == 'src'
-              next if name == 'font-family' || name == 'src'
-              @declarations[name] = value
-              allowed_values = property[:allowed]
-              next unless allowed_values
-              if allowed_values.include?(value)
-                @declarations[name] = get_synonym(property, value.to_sym) || value
-              else
-                @declaration[name] = property[:default]
-              end
+            next unless child.is_a?(Sass::Tree::PropNode)
+            name = child.resolved_name
+            value = child.resolved_value
+            key = name.tr('-', '_').to_sym
+            property = INITIAL_VALUES[key]
+            next unless property
+            @declarations[name] = value.downcase if name == 'font-family'
+            @declarations[name] = value.gsub(/'|"/, '') if name == 'src'
+            next if name == 'font-family' || name == 'src'
+            @declarations[name] = value
+            allowed_values = property[:allowed]
+            next unless allowed_values
+            if allowed_values.include?(value)
+              @declarations[name] = get_synonym(property, value.to_sym) || value
+            else
+              @declaration[name] = property[:default]
             end
           end
         end

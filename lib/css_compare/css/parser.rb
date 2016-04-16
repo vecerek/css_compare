@@ -5,7 +5,7 @@ module CssCompare
     class Parser
       # @param [File]
       def initialize(input)
-        @input =  File.expand_path(input)
+        @input = File.expand_path(input)
       end
 
       # Parses a CSS project using the Sass parser
@@ -17,8 +17,8 @@ module CssCompare
       # @return [::Sass::Tree::RootNode]
       def parse
         tree = ::Sass::Engine.new(
-            File.read(@input),
-            {:syntax => :scss, :filename => File.expand_path(@input)}
+          File.read(@input),
+          :syntax => :scss, :filename => File.expand_path(@input)
         ).to_tree
         ::Sass::Tree::Visitors::CheckNesting.visit(tree)
         ::Sass::Tree::Visitors::Perform.visit(tree)

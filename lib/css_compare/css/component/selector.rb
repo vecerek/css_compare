@@ -43,7 +43,7 @@ module CssCompare
         #   the selector to be merged with
         # @return [Void]
         def merge(other)
-          other.properties.each do |_,prop|
+          other.properties.each do |_, prop|
             add_property(prop, true)
           end
         end
@@ -65,11 +65,11 @@ module CssCompare
           if @properties[name]
             @properties[name].merge(prop)
           else
-            if deep_copy
-              @properties[name] = prop.deep_copy
-            else
-              @properties[name] = prop
-            end
+            @properties[name] = if deep_copy
+                                  prop.deep_copy
+                                else
+                                  prop
+                                end
           end
         end
 
@@ -82,7 +82,7 @@ module CssCompare
           copy = dup
           copy.name = name
           copy.properties = {}
-          @properties.each {|k,v| copy.properties[k] = v.deep_copy}
+          @properties.each { |k, v| copy.properties[k] = v.deep_copy }
           copy
         end
 
@@ -92,7 +92,7 @@ module CssCompare
         def to_json
           key = @name.to_sym
           json = { key => {} }
-          @properties.inject(json[key]) do |result, (k,v)|
+          @properties.inject(json[key]) do |result, (k, v)|
             result.update(k => v.to_json)
           end
           json

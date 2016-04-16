@@ -7,5 +7,5 @@ rescue
   require 'css_compare'
 end
 
-opts = CssCompare::Exec::Comparison.new(ARGV)
+opts = CssCompare::Comparison.new(ARGV)
 opts.parse!

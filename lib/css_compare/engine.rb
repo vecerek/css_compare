@@ -12,7 +12,7 @@ module CssCompare
     #
     # @return [Engine] itself for method chaining purposes
     def parse!
-      @options[:operands].each {|operand| @operands << CSS::Engine.new(operand).evaluate }
+      @options[:operands].each { |operand| @operands << CSS::Engine.new(operand).evaluate }
       self
     end
 

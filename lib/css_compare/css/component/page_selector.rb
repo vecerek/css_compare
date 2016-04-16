@@ -24,7 +24,7 @@ module CssCompare
         attr_accessor :margin_boxes
 
         # The global margin symbol.
-        GLOBAL_MARGIN_SYMBOL = '@all'
+        GLOBAL_MARGIN_SYMBOL = '@all'.freeze
 
         # @param [String] value the page selector
         # @param [Array<Sass::Tree::Node>] children page body
@@ -53,7 +53,7 @@ module CssCompare
         # @param [PageSelector]
         # @return [Void]
         def merge(other)
-          other.margin_boxes.each do |_,prop|
+          other.margin_boxes.each do |_, prop|
             add_margin_box(prop, true)
           end
         end
@@ -66,7 +66,7 @@ module CssCompare
         def deep_copy(value = @value)
           copy = dup
           copy.value = value
-          copy.margin_boxes = @margin_boxes.inject({}) do |result,(k,v)|
+          copy.margin_boxes = @margin_boxes.inject({}) do |result, (k, v)|
             result.update(k => v.deep_copy)
           end
           copy
@@ -76,8 +76,8 @@ module CssCompare
         #
         # @return [Hash]
         def to_json
-          json = { selector: @value, margin_boxes: [] }
-          @margin_boxes.inject(json[:margin_boxes]) do |result,(k,v)|
+          json = { :selector => @value, :margin_boxes => [] }
+          @margin_boxes.inject(json[:margin_boxes]) do |result, (_k, v)|
             result << v.to_json
           end
           json
@@ -94,11 +94,11 @@ module CssCompare
           if @margin_boxes[margin_box.name]
             @margin_boxes[margin_box.name].merge(margin_box)
           else
-            if deep_copy
-              @margin_boxes[margin_box.name] = margin_box.deep_copy
-            else
-              @margin_boxes[margin_box.name] = margin_box
-            end
+            @margin_boxes[margin_box.name] = if deep_copy
+                                               margin_box.deep_copy
+                                             else
+                                               margin_box
+                                             end
           end
         end
 
@@ -115,7 +115,7 @@ module CssCompare
               margin_box = node.resolved_value
               children = node.children
             else
-              next #just ignore these nodes
+              next # just ignore these nodes
             end
             add_margin_box(MarginBox.new(margin_box, children, conditions))
           end

@@ -13,7 +13,7 @@ module CssCompare
         def ==(this, that)
           keys = this.keys + that.keys
           keys.uniq!
-          keys.all? {|key| this[key] && that[key] && this[key] == that[key] }
+          keys.all? { |key| this[key] && that[key] && this[key] == that[key] }
         end
       end
     end

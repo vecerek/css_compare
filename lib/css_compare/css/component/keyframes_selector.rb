@@ -64,7 +64,7 @@ module CssCompare
         def deep_copy(value = @value)
           copy = dup
           copy.value = value
-          copy.properties = @properties.inject({}) do |result,(k,v)|
+          copy.properties = @properties.inject({}) do |result, (k, v)|
             result.update(k => v.deep_copy)
           end
         end
@@ -74,7 +74,7 @@ module CssCompare
         #
         # @return [Hash]
         def to_json
-          @properties.inject({}) do |result, (name,prop)|
+          @properties.inject({}) do |result, (name, prop)|
             result.update(name.to_sym => prop.to_json)
           end
         end
