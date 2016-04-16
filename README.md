@@ -1,6 +1,18 @@
-# css-compare
+# css_compare
 
-Processes and compares 2 CSS files based on their AST. The repository has been created in order to  be able to test the [less2sass](https://github.com/vecerek/less2sass) project.
+Processes, evaluates and compares 2 CSS files based on their AST. The repository has been created in order to be able to test the [less2sass](https://github.com/vecerek/less2sass) project. The program returns `true` or `false` to the `$stdout`, so far.
+Uses the Sass parser to get the CSS files' AST.
+
+Supported CSS features:
+- all types of selectors (they are normalized - duplicity removal and logical/alphabetical ordering)
+- @media, partially
+- @import (lazy loading of imported css files, that can be found, otherwise ignored)
+- @font-face
+- @namespace
+- @charset
+- @keyframes
+- @page
+- @supports, partially
 
 ## Installation
 
@@ -19,18 +31,30 @@ Or install it yourself as:
     $ gem install css-compare
 
 ## Usage
+Command line usage:
 
-TODO: Write usage instructions here
+    $ css_compare CSS_FILE_1 CSS_FILE_2
+    
+Programmatic usage:
 
-## Development
+```ruby
+opts = {
+    :operands => ["path/to/file1.css", "path/to/file2.css"]
+}
+result = CssCompare::Engine.new(opts)
+                   .parse!
+                   .equal?
+```
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+## TODO
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+- Evaluate shorthand properties, so the values of base properties get overridden.
+- Evaluate @media rule's and @supports rule's conditions.
+- Output the difference, optionally.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/vecerek/css-compare.
+Bug reports and pull requests are welcome on GitHub at https://github.com/vecerek/css_compare.
 
 
 ## License
