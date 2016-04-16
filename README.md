@@ -30,6 +30,11 @@ Or install it yourself as:
     $ gem install css-compare
 
 ## Usage
+Command line usage:
+
+    $ css_compare CSS_FILE_1 CSS_FILE_2
+    
+Programmatic usage:
 
 ```ruby
 opts = {
