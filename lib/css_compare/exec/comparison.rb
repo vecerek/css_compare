@@ -41,7 +41,7 @@ module CssCompare::Exec
     # @param opts [OptionParser]
     def set_opts(opts)
       opts.banner = <<END
-Usage: css_compare [options] CSS_1 CSS_2 [OUTPUT]
+Usage: css_compare [options] CSS_1 CSS_2
 Description:
 Compares two CSS files/projects and tells whether they are equal.
 END
@@ -62,25 +62,10 @@ END
       end
     end
 
+    # @todo: specify an option for outputting the diff, when feature is ready
     def input_and_output(opts)
-      opts.separator ''
-      opts.separator 'Input and Output:'
-
-      opts.on('--stdout', :NONE,
-              'Outputs the result to the standard output instead of a specified file.',
-              'This is the default behavior if no output file is specified.') do
-        @options[:output] = $stdout
-      end
-
-      # Optional argument with keyword completion.
-      opts.on('--operator [OPERATOR]', [:eq!, :eq, :gt, :lt],
-              'Select transfer type (eq!, eq, gt, gte, lt, lte)',
-              "\t - eq! (default): Tests whether the stylesheets are completely equal.",
-              "\t - eq: Tests whether the common selectors of the stylesheets have the same and equal properties.",
-              "\t - gt: Tests whether the first stylesheet contains all the selectors of the second one",
-              "\t - lt: Tests whether the second stylesheet contains all the selectors of the first one",) do |op|
-        @options[:op] = op
-      end
+      #opts.separator ''
+      #opts.separator 'Input and Output:'
     end
 
     def open_file(filename, flag = 'r')
@@ -103,9 +88,7 @@ END
         raise ArgumentError, "You have specified #{args.length} operand(s), 2 expected."
       end
       @options[:output_filename] = args.shift unless args.empty?
-
       @options[:output] ||= @options[:output_filename] || $stdout
-      @options[:op] ||= :eq!
 
       run
     end
