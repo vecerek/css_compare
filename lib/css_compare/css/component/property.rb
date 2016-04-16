@@ -107,7 +107,7 @@ module CssCompare
         #
         # @see #process
         # @return [Boolean]
-        def is_complex?
+        def complex?
           COMPLEX_PROPERTIES.include?(@name)
           false
         end
@@ -146,7 +146,7 @@ module CssCompare
         #
         # @return [Array<Property>]
         def process
-          return nil unless is_complex?
+          return nil unless complex?
           []
         end
       end

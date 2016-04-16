@@ -38,7 +38,7 @@ module CssCompare
         # @param [FontFace] other the @font-face to compare this
         #   with.
         def ==(other)
-          @declarations.all? { |k, _| @declarations[k] === other.declarations[k] }
+          @declarations.all? { |k, _| @declarations[k] == other.declarations[k] }
         end
 
         # Tells, whether this rule is valid or not.

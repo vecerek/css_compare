@@ -15,7 +15,7 @@ module CssCompare
     def parse!
       begin
         parse
-      rescue Exception => e
+      rescue StandardError => e
         raise e if @options[:trace] || e.is_a?(SystemExit)
         $stderr.puts "#{e.class}: " + e.message.to_s
         exit 1
@@ -26,7 +26,7 @@ module CssCompare
     # Parses the command-line arguments and runs the executable.
     def parse
       OptionParser.new do |opts|
-        set_opts(opts)
+        process_opts(opts)
       end.parse!(@args)
 
       process_args
@@ -39,7 +39,7 @@ module CssCompare
     # Tells optparse how to parse the arguments.
     #
     # @param opts [OptionParser]
-    def set_opts(opts)
+    def process_opts(opts)
       opts.banner = <<END
 Usage: css_compare [options] CSS_1 CSS_2
 Description:
@@ -82,15 +82,20 @@ END
     def process_args
       args = @args.dup
       @options[:operands] = nil
-      if args.length >= 2
-        @options[:operands] = args.shift(2)
-      else
-        raise ArgumentError, "You have specified #{args.length} operand(s), 2 expected."
-      end
+      raise ArgumentError, "You have specified #{args.length} operand(s), 2 expected." unless args.length >= 2
+      @options[:operands] = args.shift(2)
       @options[:output_filename] = args.shift unless args.empty?
       @options[:output] ||= @options[:output_filename] || $stdout
 
       run
+    end
+
+    def write_output(text, destination)
+      if destination.is_a?(String)
+        open_file(destination, 'w') { |file| file.write(text) }
+      else
+        destination.write(text)
+      end
     end
 
     # Runs the comparison.
@@ -98,7 +103,7 @@ END
       result = CssCompare::Engine.new(@options)
                                  .parse!
                                  .equal?
-      puts result.to_s
+      write_output(result.to_s, @options[:output])
     end
   end
 end

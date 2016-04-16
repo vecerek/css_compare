@@ -169,13 +169,12 @@ module CssCompare
           :charset => @charset
         }
         @selectors.inject(engine[:selectors]) { |arr, (_, s)| arr << s.to_json }
-        @font_faces.inject(engine[:font_faces]) do |arr, (cond, font_families)|
+        @font_faces.each_with_object(engine[:font_faces]) do |(cond, font_families), arr|
           arr[cond] = font_families.inject([]) do |font_faces, (_, font_family)|
             font_faces + font_family.inject([]) do |sum, (_, font_face)|
               sum << font_face.to_json
             end
           end
-          arr
         end
         @keyframes.inject(engine[:keyframes]) { |arr, (_, k)| arr << k.to_json }
         @pages.inject(engine[:pages]) { |arr, (_, p)| arr << p.to_json }

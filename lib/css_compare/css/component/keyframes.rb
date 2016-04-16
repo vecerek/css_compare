@@ -82,8 +82,8 @@ module CssCompare
         # @return [Hash]
         def to_json
           json = { :name => @name.to_sym, :rules => {} }
-          @rules.inject(json[:rules]) do |frames, (cond, rules)|
-            rules.inject(frames[cond.to_sym] = {}) do |result, (value, rule)|
+          @rules.each_with_object(json[:rules]) do |(cond, rules), frames|
+            rules.each_with_object(frames[cond.to_sym] = {}) do |(value, rule), result|
               result.update(value.to_sym => rule.to_json)
             end
             frames
@@ -109,7 +109,7 @@ module CssCompare
         #
         # @return [Hash{String => KeyframeSelector}]
         def process_rules(rule_nodes)
-          rule_nodes.inject({}) do |rules, node|
+          rule_nodes.each_with_object({}) do |node, rules|
             if node.is_a?(Sass::Tree::KeyframeRuleNode)
               rule = Component::KeyframesSelector.new(node)
               rules.update(rule.value => rule)

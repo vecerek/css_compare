@@ -19,8 +19,8 @@ module CssCompare
         # W3 specification.
         #
         # If a size property declaration is qualified by a
-        # ‘width’, ‘height’, ‘device-width’, ‘device-height’,
-        # ‘aspect-ratio’, ‘device-aspect-ratio’ or ‘orientation’
+        # 'width', 'height', 'device-width', 'device-height',
+        # 'aspect-ratio', 'device-aspect-ratio' or 'orientation'
         # media query (or other conditional on the size of the
         # paper), then the declaration must be ignored.
         #
@@ -31,7 +31,7 @@ module CssCompare
         def add_property(prop, deep_copy = false)
           prop.values.delete_if do |k, _|
             IGNORED_CONDITIONS.any? { |condition| k.include?(condition) }
-          end if prop.name === 'size'
+          end if prop.name == 'size'
           super(prop, deep_copy)
         end
       end
