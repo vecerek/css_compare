@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'rubygems'
 
 CSSCOMPARE_GEMSPEC = Gem::Specification.new do |spec|
-  spec.name          = 'css-compare'
+  spec.name          = 'css_compare'
   spec.version       = File.read(File.dirname(__FILE__) + '/VERSION').strip
   spec.authors       = ['Attila Večerek']
   spec.email         = ['attila.vecerek@gmail.com']
@@ -25,13 +25,15 @@ CSSCOMPARE_GEMSPEC = Gem::Specification.new do |spec|
     raise 'RubyGems 2.0 or newer is required to protect against public gem pushes.'
   end
 
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
-  spec.files         = Dir['lib/**/*', 'bin/*']
+  readmes = Dir['*'].reject{ |x| x =~ /(^|[^.a-z])[a-z]+/ || x == 'TODO' }
+  spec.executables   = %w(css_compare)
+  spec.files         = Dir['lib/**/*', 'bin/*', 'Rakefile'] + readmes
   spec.test_files    = Dir['spec/lib/**/*_spec.rb', 'test/**/*_test.rb']
   spec.has_rdoc      = false
   spec.require_paths = ['lib']
 
-  spec.add_development_dependency 'bundler', '~> 1.11'
-  spec.add_development_dependency 'rake', '~> 10.0'
-  spec.add_development_dependency 'rspec', '~> 3.0'
+  #spec.add_development_dependency 'bundler', '~> 1.11'
+  #spec.add_development_dependency 'rake', '~> 10.0'
+  #spec.add_development_dependency 'rspec', '~> 3.0'
+  spec.add_development_dependency 'sass', '~> 3.4'
 end
