@@ -16,11 +16,11 @@ module CssCompare
         # @return [Hash{String => Component::Property}] properties
         attr_accessor :properties
 
-        # @param [String] name of the selector
+        # @param [String] name the selector's name
         # @param [Array<Sass::Tree::PropNode>] properties to be included
         # @param [Array<String>] conditions @media query conditions
         def initialize(name, properties, conditions)
-          @name = name
+          @name = name.strip
           @properties = {}
           process_properties(properties, conditions)
         end
@@ -80,7 +80,7 @@ module CssCompare
         # @return [Selector] a copy of self
         def deep_copy(name = @name)
           copy = dup
-          copy.name = name
+          copy.name = name.strip
           copy.properties = {}
           @properties.each { |k, v| copy.properties[k] = v.deep_copy }
           copy

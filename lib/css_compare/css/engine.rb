@@ -88,8 +88,7 @@ module CssCompare
       # @param [Engine] other the engine to compare this with.
       # @return [Boolean]
       def ==(other)
-        keys = @engine.keys + other.engine.keys
-        return false unless keys.uniq! # @todo this won't work
+        keys = @engine.keys
         keys.all? { |key| @engine[key] == other.engine[key] }
       end
 
