@@ -31,6 +31,7 @@ module CssCompare
           # Can't do gsub! because the String gets frozen and can't be further modified by strip
           value = value.gsub(/\s*!important\s*/, '')
           @is_important = value != original_value
+          value = sanitize_value(value) if value =~ CONTAIN_STRING
           @value = value
         end
 
@@ -44,6 +45,31 @@ module CssCompare
         # @return [String] the String representation of this node
         def to_s
           @value.to_s + (@is_important ? ' !important' : '')
+        end
+
+        private
+
+        CONTAIN_STRING = /['"](.*)['"]/
+
+        # Normalizes string values.
+        #
+        # We can assume, that a value describes a path
+        # if following the removal of leading and trailing
+        # quotes it begins with a `./`. It can be safely
+        # removed without affecting the real value of
+        # the CSS property.
+        #
+        # Examples:
+        #   "'path/to/file.css'" #=> "path/to/file.css"
+        #   ""\"path/to/file.css\""" #=> ""path/to/file.css""
+        #   "./path/to/file.css" #=> "path/to/file.css"
+        #
+        # @param [String] value the string to sanitize
+        # @return [String] sanitized string
+        def sanitize_value(value)
+          value = value.sub(/\A['"](.*)['"]\Z/, '\1').gsub(/\\"|"|'/, '"') # Solves first two examples
+          value = value.sub('./', '') if value.start_with?('url(') # Solves third if it's a url value
+          value
         end
       end
     end
