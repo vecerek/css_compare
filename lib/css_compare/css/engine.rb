@@ -278,7 +278,7 @@ module CssCompare
       #   a small change in the the selector's name.
       #
       # @param [Sass::Tree:RuleNode] node the Rule node
-      # @param [Array<String>] parent_query_list processed parent_query_list of the
+      # @param [Array<String>] conditions processed parent_query_list of the
       #   parent media node. If the rule is global, it will be assigned
       #   to the media query equal to `@media all {}`.
       # @return [Void]

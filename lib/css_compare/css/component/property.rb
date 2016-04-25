@@ -28,7 +28,7 @@ module CssCompare
         def initialize(node, conditions)
           @name = node.resolved_name
           @values = {}
-          value = Value.new(node.resolved_value)
+          value = Value.new(node)
           conditions.each { |c| set_value(value.clone, c) }
         end
 
