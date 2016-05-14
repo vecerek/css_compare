@@ -22,6 +22,10 @@ module CssCompare
           @value == other.value
         end
 
+        def equals?(other)
+          @value.equals?(other.value)
+        end
+
         # @private
         def value=(val)
           if val.is_a?(self.class)

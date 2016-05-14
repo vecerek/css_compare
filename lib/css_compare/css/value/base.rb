@@ -1,3 +1,5 @@
+require 'color'
+
 module CssCompare
   module CSS
     module Value
@@ -18,11 +20,23 @@ module CssCompare
           self.class == other.class
         end
 
-        # Checks, whether the CSS values are flagged as !important
+        def equals?(other)
+          self == other
+        end
+
+        # Checks, whether the CSS values are flagged as !important.
         #
         # @return [Boolean]
         def important?
           @value.to_sass.include?('!important')
+        end
+
+        # Checks, whether the CSS value is a color. Subclasses may
+        # override this method.
+        #
+        # @return [Boolean]
+        def color?
+          false
         end
 
         # @return [String]
@@ -38,6 +52,10 @@ module CssCompare
         # @return [String] sanitized string
         def sanitize_string(value)
           value.sub(/\A['"](.*)['"]\Z/, '\1').gsub(/\\"|"|'/, '"')
+        end
+
+        def sanitize_font(value)
+          value.gsub(/\\"|"|'/, '')
         end
 
         # Normalizes the url paths.

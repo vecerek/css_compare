@@ -42,7 +42,8 @@ module CssCompare
         #   with.
         # @return [Boolean]
         def ==(other)
-          super(@values, other.values)
+          return super(@values, other.values) unless font?
+          equals?(@values, other.values)
         end
 
         # Merges the property with another one.
@@ -139,6 +140,10 @@ module CssCompare
         # @return [Boolean]
         def important_value?(val)
           val.to_s.include?('!important')
+        end
+
+        def font?
+          @name['font']
         end
 
         # Breaks down complex properties like `border` into
