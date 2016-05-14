@@ -54,6 +54,9 @@ module CssCompare
       attr_accessor :selectors, :keyframes, :namespaces,
                     :pages, :supports, :charset
 
+      # @note UTF-8 is assumed as default charset
+      # @see https://www.w3.org/TR/CSS2/syndata.html#x52
+      #
       # @param [String, Sass::Tree::Node] input the source file of
       #   the CSS project, or its AST
       def initialize(input)
@@ -76,7 +79,7 @@ module CssCompare
         @pages = {}
         @supports = {}
         @unsupported = []
-        @charset
+        @charset = 'UTF-8'
       end
 
       # Checks, whether two engines are equal.
@@ -278,7 +281,7 @@ module CssCompare
       #   a small change in the the selector's name.
       #
       # @param [Sass::Tree:RuleNode] node the Rule node
-      # @param [Array<String>] parent_query_list processed parent_query_list of the
+      # @param [Array<String>] conditions processed parent_query_list of the
       #   parent media node. If the rule is global, it will be assigned
       #   to the media query equal to `@media all {}`.
       # @return [Void]

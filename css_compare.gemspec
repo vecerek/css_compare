@@ -34,6 +34,7 @@ CSSCOMPARE_GEMSPEC = Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'sass', '~> 3.4'
+  spec.add_dependency 'color', '~> 1.8'
 
   spec.add_development_dependency 'rake', '~> 11.1'
   spec.add_development_dependency 'rspec', '~> 3.0'
